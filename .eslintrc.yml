@@ -1,0 +1,9 @@
+extends:
+  - metarhia
+  - plugin:prettier/recommended
+globals:
+  Atomics: true
+  SharedArrayBuffer: true
+parserOptions:
+  sourceType: module
+
