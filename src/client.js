@@ -3,13 +3,25 @@ import net from 'net';
 import { PORT } from './constants.js';
 import Agent from './protocol.js';
 import Messenger from './transport.js';
-import { Directory } from './dirtree.js';
+import { Directory, File } from './dirtree.js';
 
-const dir = new Directory('./src');
+const dir = new Directory('source');
 
 const sendAllFilesInDir = async (dir, agent) => {
-  for (const file of dir.contents) {
-    await agent.sendFile(file);
+  for (const entry of dir.contents) {
+    if (entry instanceof File) {
+      await agent.sendFile(entry);
+    }
+  }
+};
+
+const syncDir = async (root, agent) => {
+  await agent.sendDir(root);
+  await sendAllFilesInDir(root, agent);
+  for (const entry of root.contents) {
+    if (entry instanceof Directory) {
+      await syncDir(entry, agent);
+    }
   }
 };
 
@@ -17,5 +29,5 @@ const client = net.createConnection({ port: PORT }, async () => {
   const messenger = new Messenger(client);
   const agent = new Agent(messenger);
   await agent.startNegotiation();
-  await sendAllFilesInDir(dir, agent);
+  await syncDir(dir, agent);
 });
