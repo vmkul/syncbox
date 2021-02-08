@@ -9,7 +9,7 @@ class Messenger extends EventEmitter {
 
     socket.on('data', data => {
       if (!this.isTransferringFile) {
-        this.emit('message', data);
+        this.emit('message', data.toString('utf-8'));
       }
     });
 

@@ -9,7 +9,7 @@ class Agent extends EventEmitter {
     this.starter = false;
     messenger.on('message', async msg => {
       try {
-        await this.processMessage(msg.toString('utf-8'));
+        await this.processMessage(msg);
       } catch (e) {
         console.error('Error while processing!');
         console.error(e);
