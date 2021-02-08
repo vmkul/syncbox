@@ -64,4 +64,4 @@ class Directory {
   }
 }
 
-export { Directory };
+export { Directory, File };

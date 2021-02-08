@@ -1,4 +1,6 @@
 import { EventEmitter } from 'events';
+import { mkdir, open } from 'fs/promises';
+import fs from 'fs';
 import { HANDSHAKE_MESSAGE, SUCCESS_MESSAGE } from './constants.js';
 
 class Agent extends EventEmitter {
@@ -23,6 +25,8 @@ class Agent extends EventEmitter {
       await this.shakeHands(message);
     } else if (message.startsWith('FILE')) {
       await this.getFile(message);
+    } else if (message.startsWith('DIR')) {
+      await this.createDir(message);
     } else if (message === SUCCESS_MESSAGE) {
       this.emit('operation_success');
     } else {
@@ -44,7 +48,30 @@ class Agent extends EventEmitter {
   async getFile(message) {
     const filePath = message.split(' ')[1];
     const fileSize = parseInt(message.split(' ')[2]);
-    await this.messenger.getFile(filePath, fileSize);
+
+    if (fileSize === 0) {
+      fs.closeSync(fs.openSync(filePath, 'w'));
+    } else {
+      await this.messenger.getFile(filePath, fileSize);
+    }
+
+    await this.messenger.sendMessage(SUCCESS_MESSAGE);
+  }
+
+  async touch(path) {
+    fs.closeSync(fs.openSync(path, 'w'));
+  }
+
+  async sendDir(dir) {
+    console.log('Sending create DIR ' + dir.path);
+    await this.messenger.sendMessage('DIR ' + dir.path);
+    await this.ensureOperationSuccess();
+    console.log('Successfully created DIR ' + dir.path);
+  }
+
+  async createDir(message) {
+    const path = './dest/' + message.split(' ')[1];
+    await mkdir(path, { recursive: true });
     await this.messenger.sendMessage(SUCCESS_MESSAGE);
   }
 
@@ -65,9 +92,9 @@ class Agent extends EventEmitter {
   }
 
   async sendFile(file) {
-    console.log('Sending file ' + file.name);
+    console.log('Sending file ' + file.getFullPath());
     const size = await file.getSize();
-    await this.messenger.sendMessage(`FILE ${file.name} ${size}`);
+    await this.messenger.sendMessage(`FILE ${file.getFullPath()} ${size}`);
     this.messenger.sendFile(file);
     await this.ensureOperationSuccess();
     console.log('Sending successfully completed!');
