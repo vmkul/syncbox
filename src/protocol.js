@@ -1,5 +1,5 @@
 import { EventEmitter } from 'events';
-import { mkdir, open } from 'fs/promises';
+import { mkdir } from 'fs/promises';
 import fs from 'fs';
 import { HANDSHAKE_MESSAGE, SUCCESS_MESSAGE } from './constants.js';
 
