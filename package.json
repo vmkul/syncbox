@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "lint": "eslint . --fix && prettier -c \"**/*.js\"",
-    "test": "npm run -s lint && node test.js"
+    "test": "jest"
   },
   "keywords": [],
   "author": "",
@@ -18,5 +18,12 @@
     "eslint-plugin-import": "^2.20.0",
     "eslint-plugin-prettier": "^3.1.1",
     "prettier": "^2.0.5"
+  },
+  "dependencies": {
+    "@babel/plugin-transform-modules-commonjs": "^7.12.13",
+    "@jest/globals": "^26.6.2",
+    "babel": "^6.23.0",
+    "babel-jest": "^26.6.3",
+    "jest": "^26.6.3"
   }
 }
