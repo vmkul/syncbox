@@ -1,4 +1,4 @@
 export default {
   collectCoverage: true,
-  transform: { '\\.js$': 'babel-jest', },
+  transform: { '\\.js$': 'babel-jest' },
 };
