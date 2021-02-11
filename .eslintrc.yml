@@ -4,6 +4,7 @@ extends:
 globals:
   Atomics: true
   SharedArrayBuffer: true
+  jest: true
 parserOptions:
   sourceType: module
 
