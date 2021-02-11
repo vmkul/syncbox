@@ -58,10 +58,6 @@ class Agent extends EventEmitter {
     await this.messenger.sendMessage(SUCCESS_MESSAGE);
   }
 
-  async touch(path) {
-    fs.closeSync(fs.openSync(path, 'w'));
-  }
-
   async sendDir(dir) {
     console.log('Sending create DIR ' + dir.path);
     await this.messenger.sendMessage('DIR ' + dir.path);
