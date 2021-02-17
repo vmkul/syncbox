@@ -5,6 +5,7 @@
   "main": "index.js",
   "scripts": {
     "lint": "eslint . --fix && prettier -c \"**/*.js\"",
+    "lint-test": "eslint . && prettier -c \"**/*.js\"",
     "test": "jest"
   },
   "keywords": [],
