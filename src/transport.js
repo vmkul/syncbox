@@ -46,7 +46,7 @@ class Messenger extends EventEmitter {
       this.isTransferringFile = true;
       let bytesWritten = 0;
 
-      const output = createWriteStream('dest/' + filePath);
+      const output = createWriteStream(filePath);
 
       console.log('Getting file ' + filePath);
 
