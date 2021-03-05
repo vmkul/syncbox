@@ -1,13 +1,18 @@
 import { describe, expect, jest, test, beforeEach } from '@jest/globals';
 import Agent from '../protocol';
 import { EventEmitter } from 'events';
-import { HANDSHAKE_MESSAGE, SUCCESS_MESSAGE } from '../constants';
 
 jest.mock('fs/promises');
 import { mkdir } from 'fs/promises';
 
 jest.mock('fs');
 import fs from 'fs';
+import {
+  GetFileMessage,
+  HandshakeMessage,
+  MakeDirMessage,
+  SuccessMessage,
+} from '../message';
 
 describe('Tests for protocol', () => {
   const messenger = new EventEmitter();
@@ -29,20 +34,28 @@ describe('Tests for protocol', () => {
   });
 
   test('Handshake', async () => {
-    process.nextTick(() => messenger.emit('message', HANDSHAKE_MESSAGE));
+    const handshakeMessage = new HandshakeMessage();
+
+    process.nextTick(() =>
+      messenger.emit('message', JSON.stringify(handshakeMessage))
+    );
     await agent.startNegotiation();
 
-    expect(messenger.sendMessage).toBeCalledWith(HANDSHAKE_MESSAGE);
+    expect(messenger.sendMessage).toBeCalledWith(
+      JSON.stringify(handshakeMessage)
+    );
     expect(agent.handShake).toBe(true);
   });
 
   test('FILE request', async () => {
-    await agent.processMessage('FILE filename 1000');
+    await agent.processMessage(new GetFileMessage('filename', 1000));
 
-    expect(messenger.getFile).toHaveBeenCalledWith('filename', 1000);
-    expect(messenger.sendMessage).toHaveBeenCalledWith(SUCCESS_MESSAGE);
+    expect(messenger.getFile).toHaveBeenCalledWith('dest/filename', 1000);
+    expect(messenger.sendMessage).toHaveBeenCalledWith(
+      JSON.stringify(new SuccessMessage())
+    );
 
-    await agent.processMessage('FILE empty 0');
+    await agent.processMessage(new GetFileMessage('empty', 0));
 
     expect(fs.closeSync).toHaveBeenCalled();
     expect(fs.openSync).toHaveBeenCalled();
@@ -58,29 +71,39 @@ describe('Tests for protocol', () => {
       },
     };
 
-    process.nextTick(() => messenger.emit('message', SUCCESS_MESSAGE));
+    process.nextTick(() =>
+      messenger.emit('message', JSON.stringify(new SuccessMessage()))
+    );
     await agent.sendFile(file);
 
-    expect(messenger.sendMessage).toHaveBeenCalledWith('FILE test.txt 1000');
+    expect(messenger.sendMessage).toHaveBeenCalledWith(
+      JSON.stringify(new GetFileMessage('test.txt', 1000))
+    );
     expect(messenger.sendFile).toHaveBeenCalledWith(file);
   });
 
   test('sendDir method', async () => {
-    process.nextTick(() => messenger.emit('message', SUCCESS_MESSAGE));
+    process.nextTick(() =>
+      messenger.emit('message', JSON.stringify(new SuccessMessage()))
+    );
     await agent.sendDir({ path: 'test' });
 
-    expect(messenger.sendMessage).toHaveBeenCalledWith('DIR test');
+    expect(messenger.sendMessage).toHaveBeenCalledWith(
+      JSON.stringify(new MakeDirMessage('test'))
+    );
   });
 
   test('createDir method', async () => {
-    await agent.processMessage('DIR test');
+    await agent.processMessage(new MakeDirMessage('test'));
 
     expect(mkdir).toHaveBeenCalledWith('./dest/test', { recursive: true });
-    expect(messenger.sendMessage).toHaveBeenCalledWith(SUCCESS_MESSAGE);
+    expect(messenger.sendMessage).toHaveBeenCalledWith(
+      JSON.stringify(new SuccessMessage())
+    );
   });
 
   test('Unknown request', done => {
-    messenger.emit('message', 'Bad');
+    messenger.emit('message', JSON.stringify({ type: 'unknown' }));
 
     process.nextTick(() => {
       expect(messenger.closeConnection).toHaveBeenCalled();
