@@ -2,4 +2,12 @@ const PORT = 4000;
 const HANDSHAKE_MESSAGE = 'SYNCBOX HELLO';
 const SUCCESS_MESSAGE = 'SYNCBOX OK';
 
-export { PORT, HANDSHAKE_MESSAGE, SUCCESS_MESSAGE };
+const messageType = {
+  HANDSHAKE: 0,
+  GET_FILE: 1,
+  MKDIR: 2,
+  SUCCESS: 3,
+  FAIL: 4,
+};
+
+export { PORT, HANDSHAKE_MESSAGE, SUCCESS_MESSAGE, messageType };
