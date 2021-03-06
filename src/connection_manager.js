@@ -8,7 +8,7 @@ class ConnectionManager {
 
   async addConnection(agent) {
     this.connections.add(agent);
-    agent.on('handshake', async () => await syncDir(this.rootDir, agent));
+    agent.on('handshake', async () => syncDir(this.rootDir, agent));
     agent.on('end', () => this.removeConnection(agent));
   }
 
