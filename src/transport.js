@@ -24,6 +24,8 @@ class Messenger extends EventEmitter {
       console.log('socket timeout');
       await this.closeConnection();
     });
+
+    socket.on('close', () => this.emit('close'));
   }
 
   async sendMessage(msg) {
