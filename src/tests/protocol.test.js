@@ -16,7 +16,7 @@ import {
 
 describe('Tests for protocol', () => {
   const messenger = new EventEmitter();
-  const agent = new Agent(messenger);
+  const agent = new Agent(messenger, 'dir');
 
   beforeEach(() => {
     messenger.sendMessage = jest.fn();
@@ -50,7 +50,7 @@ describe('Tests for protocol', () => {
   test('FILE request', async () => {
     await agent.processMessage(new GetFileMessage('filename', 1000));
 
-    expect(messenger.getFile).toHaveBeenCalledWith('dest/filename', 1000);
+    expect(messenger.getFile).toHaveBeenCalledWith('dir/filename', 1000);
     expect(messenger.sendMessage).toHaveBeenCalledWith(
       JSON.stringify(new SuccessMessage())
     );
@@ -96,7 +96,7 @@ describe('Tests for protocol', () => {
   test('createDir method', async () => {
     await agent.processMessage(new MakeDirMessage('test'));
 
-    expect(mkdir).toHaveBeenCalledWith('./dest/test', { recursive: true });
+    expect(mkdir).toHaveBeenCalledWith('dir/test', { recursive: true });
     expect(messenger.sendMessage).toHaveBeenCalledWith(
       JSON.stringify(new SuccessMessage())
     );
