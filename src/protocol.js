@@ -11,9 +11,10 @@ import {
 } from './message.js';
 
 class Agent extends EventEmitter {
-  constructor(messenger) {
+  constructor(messenger, rootDirPath) {
     super();
     this.messenger = messenger;
+    this.rootDirPath = rootDirPath;
     this.handShake = false;
     this.starter = false;
     messenger.on('message', async msg => {
@@ -25,8 +26,11 @@ class Agent extends EventEmitter {
         console.error(e);
         await this.sendMessage(new FailMessage());
         await this.messenger.closeConnection();
+        this.emit('end');
       }
     });
+
+    messenger.on('close', () => this.emit('end'));
   }
 
   async processMessage(message) {
@@ -52,8 +56,13 @@ class Agent extends EventEmitter {
       throw new Error(`Bad handshake! Expected: ${HANDSHAKE_MESSAGE}`);
     } else {
       this.handShake = true;
+      if (!this.starter) {
+        await this.sayHi();
+        await this.ensureOperationSuccess();
+      } else {
+        await this.sendMessage(new SuccessMessage());
+      }
       this.emit('handshake');
-      if (!this.starter) await this.sayHi();
       console.log('Handshake success!');
     }
   }
@@ -62,9 +71,9 @@ class Agent extends EventEmitter {
     const { path, size } = file;
 
     if (size === 0) {
-      fs.closeSync(fs.openSync('dest/' + path, 'w'));
+      fs.closeSync(fs.openSync(`${this.rootDirPath}/${path}`, 'w'));
     } else {
-      await this.messenger.getFile('dest/' + path, size);
+      await this.messenger.getFile(`${this.rootDirPath}/${path}`, size);
     }
 
     await this.sendMessage(new SuccessMessage());
@@ -78,7 +87,7 @@ class Agent extends EventEmitter {
   }
 
   async createDir(dir) {
-    const path = './dest/' + dir.path;
+    const path = `${this.rootDirPath}/${dir.path}`;
     await mkdir(path, { recursive: true });
     await this.sendMessage(new SuccessMessage());
   }
