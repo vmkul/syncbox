@@ -28,8 +28,9 @@ class SuccessMessage extends Message {
 }
 
 class FailMessage extends Message {
-  constructor() {
+  constructor(error = '') {
     super(messageType.FAIL);
+    this.error = error;
   }
 }
 
