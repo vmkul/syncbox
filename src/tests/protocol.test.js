@@ -71,9 +71,12 @@ describe('Tests for protocol', () => {
       },
     };
 
-    process.nextTick(() =>
-      messenger.emit('message', JSON.stringify(new SuccessMessage()))
-    );
+    process.nextTick(() => {
+      messenger.emit('message', JSON.stringify(new SuccessMessage()));
+      setTimeout(() => {
+        messenger.emit('message', JSON.stringify(new SuccessMessage()));
+      }, 0);
+    });
     await agent.sendFile(file);
 
     expect(messenger.sendMessage).toHaveBeenCalledWith(
