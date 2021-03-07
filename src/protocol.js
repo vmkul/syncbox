@@ -70,6 +70,7 @@ class Agent extends EventEmitter {
   }
 
   async getFile(file) {
+    await this.sendMessage(new SuccessMessage());
     const { path, size } = file;
 
     if (size === 0) {
@@ -114,6 +115,7 @@ class Agent extends EventEmitter {
     console.log('Sending file ' + file.getFullPath());
     const size = await file.getSize();
     await this.sendMessage(new GetFileMessage(file.getFullPath(), size));
+    await this.ensureOperationSuccess();
     this.messenger.sendFile(file);
     await this.ensureOperationSuccess();
     console.log('Sending successfully completed!');
