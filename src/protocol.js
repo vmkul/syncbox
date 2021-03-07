@@ -24,7 +24,7 @@ class Agent extends EventEmitter {
       } catch (e) {
         console.error('Error while processing!');
         console.error(e);
-        await this.sendMessage(new FailMessage());
+        await this.sendMessage(new FailMessage(e.message));
         await this.messenger.closeConnection();
         this.emit('end');
       }
@@ -42,6 +42,8 @@ class Agent extends EventEmitter {
       await this.createDir(message);
     } else if (message.type === messageType.SUCCESS) {
       this.emit('operation_success');
+    } else if (message.type === messageType.FAIL) {
+      await this.messenger.closeConnection();
     } else {
       throw new Error('Unknown request: ' + message);
     }
