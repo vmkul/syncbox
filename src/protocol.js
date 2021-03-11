@@ -70,7 +70,7 @@ class Agent extends EventEmitter {
       this.handShake = true;
       if (!this.starter) {
         await this.sayHi();
-        await this.ensureOperationSuccess();
+        await this.waitFor('operation_success');
       } else {
         await this.sendMessage(new SuccessMessage());
       }
@@ -95,7 +95,7 @@ class Agent extends EventEmitter {
   async sendDir(dir) {
     console.log('Sending create DIR ' + dir.path);
     await this.sendMessage(new MakeDirMessage(dir.path));
-    await this.ensureOperationSuccess();
+    await this.waitFor('operation_success');
     console.log('Successfully created DIR ' + dir.path);
   }
 
@@ -108,13 +108,7 @@ class Agent extends EventEmitter {
   async startNegotiation() {
     this.starter = true;
     await this.sayHi();
-    await this.ensureHandShake();
-  }
-
-  ensureHandShake() {
-    return new Promise(resolve => {
-      this.once('handshake', resolve);
-    });
+    await this.waitFor('handshake');
   }
 
   async sayHi() {
@@ -125,15 +119,15 @@ class Agent extends EventEmitter {
     console.log('Sending file ' + file.getFullPath());
     const size = await file.getSize();
     await this.sendMessage(new GetFileMessage(file.getRelativePath(), size));
-    await this.ensureOperationSuccess();
+    await this.waitFor('operation_success');
     this.messenger.sendFile(file);
-    await this.ensureOperationSuccess();
+    await this.waitFor('operation_success');
     console.log('Sending successfully completed!');
   }
 
-  ensureOperationSuccess() {
+  waitFor(event) {
     return new Promise(resolve => {
-      this.once('operation_success', resolve);
+      this.once(event, resolve);
     });
   }
 }
