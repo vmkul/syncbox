@@ -17,6 +17,18 @@ class Agent extends EventEmitter {
     this.rootDirPath = rootDirPath;
     this.handShake = false;
     this.starter = false;
+    this.messageHandlers = new Map();
+
+    this.messageHandlers.set(messageType.GET_FILE, this.getFile.bind(this));
+    this.messageHandlers.set(messageType.MKDIR, this.createDir.bind(this));
+    this.messageHandlers.set(messageType.GET_FILE, this.getFile.bind(this));
+    this.messageHandlers.set(messageType.SUCCESS, () =>
+      this.emit('operation_success')
+    );
+    this.messageHandlers.set(messageType.FAIL, () =>
+      this.messenger.closeConnection()
+    );
+
     messenger.on('message', async msg => {
       try {
         msg = JSON.parse(msg);
@@ -36,16 +48,14 @@ class Agent extends EventEmitter {
   async processMessage(message) {
     if (!this.handShake) {
       await this.shakeHands(message);
-    } else if (message.type === messageType.GET_FILE) {
-      await this.getFile(message);
-    } else if (message.type === messageType.MKDIR) {
-      await this.createDir(message);
-    } else if (message.type === messageType.SUCCESS) {
-      this.emit('operation_success');
-    } else if (message.type === messageType.FAIL) {
-      await this.messenger.closeConnection();
     } else {
-      throw new Error('Unknown request: ' + message);
+      const handler = this.messageHandlers.get(message.type);
+
+      if (handler) {
+        await handler(message);
+      } else {
+        throw new Error('Unknown request: ' + message);
+      }
     }
   }
 
