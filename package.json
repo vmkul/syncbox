@@ -4,8 +4,8 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "lint": "eslint . --fix && prettier -c \"**/*.js\"",
-    "lint-test": "eslint . && prettier -c \"**/*.js\"",
+    "lint": "eslint . --fix && prettier --write .",
+    "lint-test": "eslint . && prettier --check .",
     "test": "jest"
   },
   "husky": {
