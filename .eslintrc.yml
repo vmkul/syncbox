@@ -1,6 +1,9 @@
 extends:
   - metarhia
   - plugin:prettier/recommended
+  - plugin:sonarjs/recommended
+plugins:
+  - sonarjs
 globals:
   Atomics: true
   SharedArrayBuffer: true
