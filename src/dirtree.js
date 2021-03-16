@@ -1,4 +1,5 @@
 import fs from 'fs';
+import { sep } from 'path';
 
 class File {
   constructor(name, parentDir) {
@@ -7,7 +8,11 @@ class File {
   }
 
   getFullPath() {
-    return this.parentDir.path + '/' + this.name;
+    return this.parentDir.path + sep + this.name;
+  }
+
+  getRelativePath() {
+    return this.getFullPath().split(sep).slice(1).join(sep);
   }
 
   async getSize() {
@@ -31,6 +36,10 @@ class Directory {
     this.contents = this.scan();
   }
 
+  getRelativePath() {
+    return this.path.split(sep).slice(1).join(sep);
+  }
+
   scan() {
     const opened = this.open();
     const result = [];
@@ -39,7 +48,7 @@ class Directory {
 
     while ((dirent = opened.readSync())) {
       if (dirent.isDirectory()) {
-        const path = `${this.path}/${dirent.name}`;
+        const path = this.path + sep + dirent.name;
         result.push(new Directory(path, this));
       } else {
         result.push(new File(dirent.name, this));
