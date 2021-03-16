@@ -41,10 +41,17 @@ class HandshakeMessage extends Message {
   }
 }
 
+class TransactionMessage extends Message {
+  constructor() {
+    super(messageType.TRANSACTION);
+  }
+}
+
 export {
   GetFileMessage,
   FailMessage,
   HandshakeMessage,
   MakeDirMessage,
   SuccessMessage,
+  TransactionMessage,
 };
