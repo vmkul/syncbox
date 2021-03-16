@@ -1,6 +1,7 @@
 import { describe, expect, jest, test, beforeEach } from '@jest/globals';
 import Agent from '../protocol';
 import { EventEmitter } from 'events';
+import { sep } from 'path';
 
 jest.mock('fs/promises');
 import { mkdir } from 'fs/promises';
@@ -50,7 +51,7 @@ describe('Tests for protocol', () => {
   test('FILE request', async () => {
     await agent.processMessage(new GetFileMessage('filename', 1000));
 
-    expect(messenger.getFile).toHaveBeenCalledWith('dir/filename', 1000);
+    expect(messenger.getFile).toHaveBeenCalledWith(`dir${sep}filename`, 1000);
     expect(messenger.sendMessage).toHaveBeenCalledWith(
       JSON.stringify(new SuccessMessage())
     );
@@ -64,6 +65,9 @@ describe('Tests for protocol', () => {
   test('sendFile method', async () => {
     const file = {
       getFullPath() {
+        return 'dir/test.txt';
+      },
+      getRelativePath() {
         return 'test.txt';
       },
       getSize() {
@@ -89,7 +93,11 @@ describe('Tests for protocol', () => {
     process.nextTick(() =>
       messenger.emit('message', JSON.stringify(new SuccessMessage()))
     );
-    await agent.sendDir({ path: 'test' });
+    await agent.sendDir({
+      getRelativePath() {
+        return 'test';
+      },
+    });
 
     expect(messenger.sendMessage).toHaveBeenCalledWith(
       JSON.stringify(new MakeDirMessage('test'))
@@ -99,7 +107,7 @@ describe('Tests for protocol', () => {
   test('createDir method', async () => {
     await agent.processMessage(new MakeDirMessage('test'));
 
-    expect(mkdir).toHaveBeenCalledWith('dir/test', { recursive: true });
+    expect(mkdir).toHaveBeenCalledWith(`dir${sep}test`, { recursive: true });
     expect(messenger.sendMessage).toHaveBeenCalledWith(
       JSON.stringify(new SuccessMessage())
     );
