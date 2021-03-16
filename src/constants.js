@@ -8,6 +8,7 @@ const messageType = {
   MKDIR: 2,
   SUCCESS: 3,
   FAIL: 4,
+  TRANSACTION: 5,
 };
 
 export { PORT, HANDSHAKE_MESSAGE, SUCCESS_MESSAGE, messageType };
