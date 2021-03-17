@@ -1,5 +1,5 @@
 import { EventEmitter } from 'events';
-import { mkdir } from 'fs/promises';
+import { mkdir, unlink } from 'fs/promises';
 import fs from 'fs';
 import { sep } from 'path';
 import { HANDSHAKE_MESSAGE, messageType } from './constants.js';
@@ -10,6 +10,7 @@ import {
   HandshakeMessage,
   FailMessage,
   TransactionMessage,
+  UnlinkMessage,
 } from './message.js';
 
 class Agent extends EventEmitter {
@@ -24,7 +25,7 @@ class Agent extends EventEmitter {
 
     this.messageHandlers.set(messageType.GET_FILE, this.getFile.bind(this));
     this.messageHandlers.set(messageType.MKDIR, this.createDir.bind(this));
-    this.messageHandlers.set(messageType.GET_FILE, this.getFile.bind(this));
+    this.messageHandlers.set(messageType.UNLINK, this.unlinkFile.bind(this));
     this.messageHandlers.set(
       messageType.TRANSACTION,
       this.toggleTransaction.bind(this)
@@ -168,6 +169,24 @@ class Agent extends EventEmitter {
     }
     await this.waitFor('operation_success');
     console.log('Sending successfully completed!');
+  }
+
+  async sendUnlink(file) {
+    await this.checkTransaction();
+    await this.sendMessage(new UnlinkMessage(file.getRelativePath()));
+    await this.waitFor('operation_success');
+    console.log(`Unlink for ${file.getRelativePath()} completed!`);
+  }
+
+  async unlinkFile(file) {
+    const { path } = file;
+    const localPath = this.rootDirPath + sep + path;
+    try {
+      await unlink(localPath);
+    } catch (e) {
+      console.log(`File ${localPath} does not exist!`);
+    }
+    await this.sendMessage(new SuccessMessage());
   }
 
   waitFor(event) {
