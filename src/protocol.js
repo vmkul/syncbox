@@ -1,5 +1,5 @@
 import { EventEmitter } from 'events';
-import { mkdir, unlink } from 'fs/promises';
+import { mkdir, unlink, rmdir } from 'fs/promises';
 import fs from 'fs';
 import { sep } from 'path';
 import { HANDSHAKE_MESSAGE, messageType } from './constants.js';
@@ -11,6 +11,7 @@ import {
   FailMessage,
   TransactionMessage,
   UnlinkMessage,
+  UnlinkDirMessage,
 } from './message.js';
 
 class Agent extends EventEmitter {
@@ -26,6 +27,7 @@ class Agent extends EventEmitter {
     this.messageHandlers.set(messageType.GET_FILE, this.getFile.bind(this));
     this.messageHandlers.set(messageType.MKDIR, this.createDir.bind(this));
     this.messageHandlers.set(messageType.UNLINK, this.unlinkFile.bind(this));
+    this.messageHandlers.set(messageType.UNLINK_DIR, this.unlinkDir.bind(this));
     this.messageHandlers.set(
       messageType.TRANSACTION,
       this.toggleTransaction.bind(this)
@@ -186,6 +188,19 @@ class Agent extends EventEmitter {
     } catch (e) {
       console.log(`File ${localPath} does not exist!`);
     }
+    await this.sendMessage(new SuccessMessage());
+  }
+
+  async sendUnlinkDir(dir) {
+    await this.checkTransaction();
+    await this.sendMessage(new UnlinkDirMessage(dir.getRelativePath()));
+    await this.waitFor('operation_success');
+    console.log(`Unlink for ${dir.path} completed!`);
+  }
+
+  async unlinkDir(dir) {
+    const localPath = this.rootDirPath + sep + dir.path;
+    await rmdir(localPath, { recursive: true });
     await this.sendMessage(new SuccessMessage());
   }
 
