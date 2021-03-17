@@ -2,13 +2,12 @@ import fs from 'fs';
 import { sep } from 'path';
 
 class File {
-  constructor(name, parentDir) {
-    this.name = name;
-    this.parentDir = parentDir;
+  constructor(path) {
+    this.path = path;
   }
 
   getFullPath() {
-    return this.parentDir.path + sep + this.name;
+    return this.path;
   }
 
   getRelativePath() {
@@ -30,46 +29,16 @@ class File {
 }
 
 class Directory {
-  constructor(path, parentDir = null) {
+  constructor(path) {
     this.path = path;
-    this.parentDir = parentDir;
-    this.contents = this.scan();
+  }
+
+  getFullPath() {
+    return this.path;
   }
 
   getRelativePath() {
     return this.path.split(sep).slice(1).join(sep);
-  }
-
-  scan() {
-    const opened = this.open();
-    const result = [];
-
-    let dirent;
-
-    while ((dirent = opened.readSync())) {
-      if (dirent.isDirectory()) {
-        const path = this.path + sep + dirent.name;
-        result.push(new Directory(path, this));
-      } else {
-        result.push(new File(dirent.name, this));
-      }
-    }
-
-    this.close();
-
-    return result;
-  }
-
-  open() {
-    this.openedDir = fs.opendirSync(this.path);
-    return this.openedDir;
-  }
-
-  close() {
-    if (this.openedDir) {
-      this.openedDir.closeSync();
-      this.openedDir = null;
-    }
   }
 }
 
