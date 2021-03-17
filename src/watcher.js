@@ -48,8 +48,11 @@ class Watcher {
     await this.agent.sendFile(new File(fileName, parentDir));
   }
 
-  async unlinkHandler() {
-    // TODO
+  async unlinkHandler(filePath) {
+    const fileName = path.basename(filePath);
+    const dirName = path.dirname(filePath);
+    const parentDir = new Directory(dirName);
+    await this.agent.sendUnlink(new File(fileName, parentDir));
   }
 
   async addDirHandler(dirPath) {
