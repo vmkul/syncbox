@@ -47,6 +47,20 @@ class TransactionMessage extends Message {
   }
 }
 
+class UnlinkMessage extends Message {
+  constructor(path) {
+    super(messageType.UNLINK);
+    this.path = path;
+  }
+}
+
+class UnlinkDirMessage extends Message {
+  constructor(path) {
+    super(messageType.UNLINK_DIR);
+    this.path = path;
+  }
+}
+
 export {
   GetFileMessage,
   FailMessage,
@@ -54,4 +68,6 @@ export {
   MakeDirMessage,
   SuccessMessage,
   TransactionMessage,
+  UnlinkMessage,
+  UnlinkDirMessage,
 };
