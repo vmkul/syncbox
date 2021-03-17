@@ -1,24 +1,5 @@
+import chokidar from 'chokidar';
 import { Directory, File } from './dirtree.js';
-
-const sendAllFilesInDir = async (dir, agent) => {
-  for (const entry of dir.contents) {
-    if (entry instanceof File) {
-      await agent.sendFile(entry);
-    }
-  }
-};
-
-const syncDir = async (root, agent, isRootDir = true) => {
-  if (!isRootDir) {
-    await agent.sendDir(root);
-  }
-  await sendAllFilesInDir(root, agent);
-  for (const entry of root.contents) {
-    if (entry instanceof Directory) {
-      await syncDir(entry, agent, false);
-    }
-  }
-};
 
 class AsyncQueue {
   constructor(beforeExec, afterExec) {
@@ -52,4 +33,24 @@ class AsyncQueue {
   }
 }
 
-export { sendAllFilesInDir, syncDir, AsyncQueue };
+const syncDir = (dir, agent) =>
+  new Promise(resolve => {
+    const taskQueue = new AsyncQueue(
+      agent.startTransaction.bind(agent),
+      agent.endTransaction.bind(agent)
+    );
+    const watcher = chokidar
+      .watch(dir.getFullPath())
+      .on('add', path =>
+        taskQueue.addTask(agent.sendFile.bind(agent, new File(path)))
+      )
+      .on('addDir', path =>
+        taskQueue.addTask(agent.sendDir.bind(agent, new Directory(path)))
+      )
+      .on('ready', async () => {
+        await watcher.close();
+        resolve();
+      });
+  });
+
+export { syncDir, AsyncQueue };
