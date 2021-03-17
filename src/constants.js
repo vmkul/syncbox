@@ -9,6 +9,8 @@ const messageType = {
   SUCCESS: 3,
   FAIL: 4,
   TRANSACTION: 5,
+  UNLINK: 6,
+  UNLINK_DIR: 7,
 };
 
 export { PORT, HANDSHAKE_MESSAGE, SUCCESS_MESSAGE, messageType };
