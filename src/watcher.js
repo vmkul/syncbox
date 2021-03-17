@@ -1,5 +1,4 @@
 import chokidar from 'chokidar';
-import path from 'path';
 import { Directory, File } from './dirtree.js';
 import { access } from 'fs';
 import { AsyncQueue } from './util.js';
@@ -39,20 +38,13 @@ class Watcher {
 
   async changeHandler(filePath) {
     if (!(await this.checkIfExists(filePath))) {
-      console.log('returning');
       return;
     }
-    const fileName = path.basename(filePath);
-    const dirName = path.dirname(filePath);
-    const parentDir = new Directory(dirName);
-    await this.agent.sendFile(new File(fileName, parentDir));
+    await this.agent.sendFile(new File(filePath));
   }
 
   async unlinkHandler(filePath) {
-    const fileName = path.basename(filePath);
-    const dirName = path.dirname(filePath);
-    const parentDir = new Directory(dirName);
-    await this.agent.sendUnlink(new File(fileName, parentDir));
+    await this.agent.sendUnlink(new File(filePath));
   }
 
   async addDirHandler(dirPath) {
@@ -62,8 +54,8 @@ class Watcher {
     await this.agent.sendDir(new Directory(dirPath));
   }
 
-  async unlinkDirHandler() {
-    // TODO
+  async unlinkDirHandler(dirPath) {
+    await this.agent.sendUnlinkDir(new Directory(dirPath));
   }
 
   async errorHandler(e) {
