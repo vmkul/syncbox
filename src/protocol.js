@@ -1,7 +1,7 @@
 import { EventEmitter } from 'events';
 import { mkdir, unlink, rmdir } from 'fs/promises';
 import fs from 'fs';
-import { sep } from 'path';
+import { sep, normalize } from 'path';
 import { HANDSHAKE_MESSAGE, messageType } from './constants.js';
 import {
   GetFileMessage,
@@ -125,12 +125,13 @@ class Agent extends EventEmitter {
 
   async getFile(file) {
     const { path, size } = file;
+    const localPath = this.transformPath(path);
 
     if (size === 0) {
-      fs.closeSync(fs.openSync(this.rootDirPath + sep + path, 'w'));
+      fs.closeSync(fs.openSync(localPath, 'w'));
     } else {
       await this.sendMessage(new SuccessMessage());
-      await this.messenger.getFile(this.rootDirPath + sep + path, size);
+      await this.messenger.getFile(localPath, size);
     }
 
     await this.sendMessage(new SuccessMessage());
@@ -145,7 +146,7 @@ class Agent extends EventEmitter {
   }
 
   async createDir(dir) {
-    const path = this.rootDirPath + sep + dir.path;
+    const path = this.transformPath(dir.path);
     console.log('Creating dir ' + path);
     await mkdir(path, { recursive: true });
     await this.sendMessage(new SuccessMessage());
@@ -182,7 +183,7 @@ class Agent extends EventEmitter {
 
   async unlinkFile(file) {
     const { path } = file;
-    const localPath = this.rootDirPath + sep + path;
+    const localPath = this.transformPath(path);
     try {
       await unlink(localPath);
     } catch (e) {
@@ -199,9 +200,21 @@ class Agent extends EventEmitter {
   }
 
   async unlinkDir(dir) {
-    const localPath = this.rootDirPath + sep + dir.path;
+    const localPath = this.transformPath(dir.path);
     await rmdir(localPath, { recursive: true });
     await this.sendMessage(new SuccessMessage());
+  }
+
+  transformPath(path) {
+    path = normalize(path);
+    if (sep === '/') {
+      if (path.includes('\\')) {
+        path = path.replace('\\', '/');
+      }
+    } else if (path.includes('/')) {
+      path = path.replace('\\', '/');
+    }
+    return this.rootDirPath + sep + path;
   }
 
   waitFor(event) {
