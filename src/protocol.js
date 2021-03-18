@@ -206,14 +206,14 @@ class Agent extends EventEmitter {
   }
 
   transformPath(path) {
-    path = normalize(path);
     if (sep === '/') {
       if (path.includes('\\')) {
-        path = path.replace('\\', '/');
+        path = path.split('\\').join('/');
       }
     } else if (path.includes('/')) {
-      path = path.replace('\\', '/');
+      path = path.split('/').join('\\');
     }
+    path = normalize(path);
     return this.rootDirPath + sep + path;
   }
 
