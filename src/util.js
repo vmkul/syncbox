@@ -44,9 +44,12 @@ const syncDir = (dir, agent) =>
       .on('add', path =>
         taskQueue.addTask(agent.sendFile.bind(agent, new File(path)))
       )
-      .on('addDir', path =>
-        taskQueue.addTask(agent.sendDir.bind(agent, new Directory(path)))
-      )
+      .on('addDir', async path => {
+        if (path === dir.getFullPath()) {
+          return;
+        }
+        await taskQueue.addTask(agent.sendDir.bind(agent, new Directory(path)));
+      })
       .on('ready', async () => {
         await watcher.close();
         resolve();
