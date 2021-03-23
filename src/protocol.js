@@ -102,6 +102,9 @@ class Agent extends EventEmitter {
   }
 
   async toggleTransaction() {
+    if (this.transactionChecker && !this.activeTransaction) {
+      await this.transactionChecker(this);
+    }
     this.activeTransaction = !this.activeTransaction;
     if (!this.activeTransaction) {
       this.emit('transaction_end');
@@ -121,6 +124,10 @@ class Agent extends EventEmitter {
 
   isInTransaction() {
     return this.activeTransaction;
+  }
+
+  runBeforeTransaction(transactionChecker) {
+    this.transactionChecker = transactionChecker;
   }
 
   async getFile(file) {
