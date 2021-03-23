@@ -1,9 +1,9 @@
 import fs from 'fs';
-import { sep } from 'path';
+import { sep, normalize } from 'path';
 
 class File {
   constructor(path) {
-    this.path = path;
+    this.path = normalize(path);
   }
 
   getFullPath() {
@@ -30,7 +30,7 @@ class File {
 
 class Directory {
   constructor(path) {
-    this.path = path;
+    this.path = normalize(path);
   }
 
   getFullPath() {
