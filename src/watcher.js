@@ -13,26 +13,33 @@ class Watcher {
     );
 
     const fsWatcher = chokidar.watch(this.dirPath).on('ready', () => {
+      const onAddOrChange = async path => {
+        if (!this.agent.isInTransaction()) {
+          await this.taskQueue.addTask(this.changeHandler.bind(this, path));
+        }
+      };
+
       fsWatcher
-        .on('add', path =>
-          this.taskQueue.addTask(this.changeHandler.bind(this, path))
-        )
-        .on('change', path =>
-          this.taskQueue.addTask(this.changeHandler.bind(this, path))
-        )
-        .on('unlink', path =>
-          this.taskQueue.addTask(this.unlinkHandler.bind(this, path))
-        )
-        .on('addDir', path =>
-          this.taskQueue.addTask(this.addDirHandler.bind(this, path))
-        )
-        .on('unlinkDir', path =>
-          this.taskQueue.addTask(this.unlinkDirHandler.bind(this, path))
-        )
-        .on('error', e =>
-          this.taskQueue.addTask(this.errorHandler.bind(this, e))
-        )
-        .on('all', (action, path) => console.log(path));
+        .on('add', onAddOrChange)
+        .on('change', onAddOrChange)
+        .on('unlink', async path => {
+          if (!this.agent.isInTransaction()) {
+            await this.taskQueue.addTask(this.unlinkHandler.bind(this, path));
+          }
+        })
+        .on('addDir', async path => {
+          if (!this.agent.isInTransaction()) {
+            await this.taskQueue.addTask(this.addDirHandler.bind(this, path));
+          }
+        })
+        .on('unlinkDir', async path => {
+          if (!this.agent.isInTransaction()) {
+            await this.taskQueue.addTask(
+              this.unlinkDirHandler.bind(this, path)
+            );
+          }
+        })
+        .on('error', e => this.errorHandler(e));
     });
   }
 
