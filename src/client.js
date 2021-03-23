@@ -8,7 +8,5 @@ const client = net.createConnection({ port: PORT }, async () => {
   const messenger = new Messenger(client);
   const agent = new Agent(messenger, 'client');
   await agent.startNegotiation();
-  agent.once('transaction_end', () => {
-    new Watcher('client', agent);
-  });
+  new Watcher('client', agent);
 });
