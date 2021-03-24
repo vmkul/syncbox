@@ -49,22 +49,16 @@ class Messenger extends EventEmitter {
       let bytesWritten = 0;
 
       const output = createWriteStream(filePath);
-
-      console.log('Getting file ' + filePath);
-
-      const promisedWrite = chunk =>
-        new Promise(resolve => {
-          output.write(chunk, resolve);
-        });
+      this.socket.pipe(output);
 
       const listener = async chunk => {
-        await promisedWrite(chunk);
         bytesWritten += chunk.length;
         if (bytesWritten === size) {
-          output.close();
           this.isTransferringFile = false;
-          console.log('Getting file completed successfully!');
+          this.socket.unpipe();
+          output.close();
           this.socket.off('data', listener);
+          this.socket.resume(); // Switch stream back to flowing mode after unpipe
           resolve();
         }
       };
