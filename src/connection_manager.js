@@ -1,9 +1,15 @@
 import { AsyncQueue, syncDir } from './util.js';
+import Diff from './diff.js';
 import { EventEmitter } from 'events';
+
+const EXEC_END_TIMEOUT = 1000;
 
 const transaction = async agent =>
   new Promise(resolve => {
-    agent.once('transaction_end', resolve);
+    agent.once('transaction_end', diff => {
+      console.log(diff);
+      resolve();
+    });
   });
 
 class ConnectionManager extends EventEmitter {
@@ -11,9 +17,13 @@ class ConnectionManager extends EventEmitter {
     super();
     this.rootDir = rootDir;
     this.connections = new Set();
-    this.transactionQueue = new AsyncQueue(() => {},
-    this.syncWithConnected.bind(this));
+    this.transactionQueue = new AsyncQueue(
+      () => {},
+      this.syncWithConnected.bind(this),
+      EXEC_END_TIMEOUT
+    );
     this.syncingClients = false;
+    this.transactionDiff = new Diff();
   }
 
   async addConnection(agent) {
@@ -29,6 +39,7 @@ class ConnectionManager extends EventEmitter {
     if (this.syncingClients) {
       await this.syncEnd();
     }
+    agent.once('transaction_end', diff => this.transactionDiff.mergeWith(diff));
     this.transactionQueue.addTask(() => transaction(agent)).then();
   }
 
@@ -37,11 +48,12 @@ class ConnectionManager extends EventEmitter {
     const p = [];
 
     for (const agent of this.connections) {
-      p.push(syncDir(this.rootDir, agent));
+      p.push(this.transactionDiff.applyChanges(agent));
     }
 
     await Promise.all(p);
 
+    this.transactionDiff = new Diff();
     this.syncingClients = false;
     this.emit('global_sync_end');
   }
