@@ -2,9 +2,10 @@ import chokidar from 'chokidar';
 import { Directory, File } from './dirtree.js';
 
 class AsyncQueue {
-  constructor(beforeExec, afterExec) {
+  constructor(beforeExec, afterExec, execEndTimeout) {
     this.beforeExec = beforeExec;
     this.afterExec = afterExec;
+    this.execEndTimeout = execEndTimeout;
     this.queue = [];
     this.executing = false;
   }
@@ -20,14 +21,21 @@ class AsyncQueue {
   async startExecution() {
     this.executing = true;
     if (this.beforeExec) await this.beforeExec();
+
     while (this.queue.length !== 0) {
+      if (this.execEndTimeout && this.queue.length === 1) {
+        await new Promise(resolve => setTimeout(resolve, this.execEndTimeout));
+      }
+
       const f = this.queue.shift();
+
       try {
         await f();
       } catch (e) {
         console.log(e);
       }
     }
+
     if (this.afterExec) await this.afterExec();
     this.executing = false;
   }
