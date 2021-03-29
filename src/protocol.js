@@ -3,6 +3,7 @@ import { mkdir, unlink, rmdir } from 'fs/promises';
 import fs from 'fs';
 import { sep, normalize } from 'path';
 import { HANDSHAKE_MESSAGE, messageType } from './constants.js';
+import Diff from './diff.js';
 import {
   GetFileMessage,
   SuccessMessage,
@@ -22,6 +23,7 @@ class Agent extends EventEmitter {
     this.handShake = false;
     this.starter = false;
     this.activeTransaction = false;
+    this.transactionDiff = new Diff();
     this.messageHandlers = new Map();
 
     this.messageHandlers.set(messageType.GET_FILE, this.getFile.bind(this));
@@ -107,9 +109,10 @@ class Agent extends EventEmitter {
     }
     this.activeTransaction = !this.activeTransaction;
     if (!this.activeTransaction) {
-      this.emit('transaction_end');
+      this.emit('transaction_end', this.transactionDiff);
       console.log('TRANSACTION END');
     } else {
+      this.transactionDiff = new Diff();
       await this.sendMessage(new SuccessMessage());
     }
   }
@@ -133,6 +136,7 @@ class Agent extends EventEmitter {
   async getFile(file) {
     const { path, size } = file;
     const localPath = this.transformPath(path);
+    this.transactionDiff.addFile(localPath);
 
     if (size === 0) {
       fs.closeSync(fs.openSync(localPath, 'w'));
@@ -154,6 +158,7 @@ class Agent extends EventEmitter {
 
   async createDir(dir) {
     const path = this.transformPath(dir.path);
+    this.transactionDiff.addDir(path);
     console.log('Creating dir ' + path);
     await mkdir(path, { recursive: true });
     await this.sendMessage(new SuccessMessage());
@@ -191,6 +196,7 @@ class Agent extends EventEmitter {
   async unlinkFile(file) {
     const { path } = file;
     const localPath = this.transformPath(path);
+    this.transactionDiff.addUnlink(localPath);
     try {
       await unlink(localPath);
     } catch (e) {
@@ -208,6 +214,7 @@ class Agent extends EventEmitter {
 
   async unlinkDir(dir) {
     const localPath = this.transformPath(dir.path);
+    this.transactionDiff.addUnlinkDir(localPath);
     await rmdir(localPath, { recursive: true });
     await this.sendMessage(new SuccessMessage());
   }
