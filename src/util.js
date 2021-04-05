@@ -23,16 +23,16 @@ class AsyncQueue {
     if (this.beforeExec) await this.beforeExec();
 
     while (this.queue.length !== 0) {
-      if (this.execEndTimeout && this.queue.length === 1) {
-        await new Promise(resolve => setTimeout(resolve, this.execEndTimeout));
-      }
-
       const f = this.queue.shift();
 
       try {
         await f();
       } catch (e) {
         console.log(e);
+      }
+
+      if (this.execEndTimeout && this.queue.length === 0) {
+        await new Promise(resolve => setTimeout(resolve, this.execEndTimeout));
       }
     }
 
