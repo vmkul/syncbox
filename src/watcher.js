@@ -2,6 +2,7 @@ import chokidar from 'chokidar';
 import { Directory, File } from './dirtree.js';
 import { open } from 'fs/promises';
 import { AsyncQueue } from './util.js';
+import { EXEC_END_TIMEOUT } from './constants.js';
 
 class Watcher {
   constructor(dirPath, agent) {
@@ -9,7 +10,8 @@ class Watcher {
     this.agent = agent;
     this.taskQueue = new AsyncQueue(
       agent.startTransaction.bind(agent),
-      agent.endTransaction.bind(agent)
+      agent.endTransaction.bind(agent),
+      EXEC_END_TIMEOUT
     );
 
     const fsWatcher = chokidar.watch(this.dirPath).on('ready', () => {
