@@ -4,7 +4,7 @@ import { EventEmitter } from 'events';
 
 const EXEC_END_TIMEOUT = 1000;
 
-const transaction = async agent =>
+const transaction = agent =>
   new Promise(resolve => {
     agent.once('transaction_end', diff => {
       console.log(diff);
@@ -19,7 +19,7 @@ class ConnectionManager extends EventEmitter {
     this.connections = new Set();
     this.transactionQueue = new AsyncQueue(
       () => {},
-      this.syncWithConnected.bind(this),
+      () => this.syncWithConnected(),
       EXEC_END_TIMEOUT
     );
     this.syncingClients = false;
@@ -28,8 +28,11 @@ class ConnectionManager extends EventEmitter {
 
   async addConnection(agent) {
     agent.runBeforeTransaction(this.confirmTransaction.bind(this));
-    agent.on('handshake', () => {
-      syncDir(this.rootDir, agent);
+    agent.on('handshake', async () => {
+      if (this.syncingClients) {
+        await this.syncEnd();
+      }
+      await syncDir(this.rootDir, agent);
       this.connections.add(agent);
     });
     agent.on('end', () => this.removeConnection(agent));
