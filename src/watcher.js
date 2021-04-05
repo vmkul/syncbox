@@ -1,6 +1,6 @@
 import chokidar from 'chokidar';
 import { Directory, File } from './dirtree.js';
-import { access } from 'fs';
+import { open } from 'fs/promises';
 import { AsyncQueue } from './util.js';
 
 class Watcher {
@@ -44,7 +44,7 @@ class Watcher {
   }
 
   async changeHandler(filePath) {
-    if (!(await this.checkIfExists(filePath))) {
+    if (!(await this.checkIfAccessible(filePath))) {
       return;
     }
     await this.agent.sendFile(new File(filePath));
@@ -55,9 +55,6 @@ class Watcher {
   }
 
   async addDirHandler(dirPath) {
-    if (!(await this.checkIfExists(dirPath))) {
-      return;
-    }
     await this.agent.sendDir(new Directory(dirPath));
   }
 
@@ -69,17 +66,17 @@ class Watcher {
     throw new Error(e);
   }
 
-  async checkIfExists(path) {
+  async checkIfAccessible(path) {
     if (!path) return false;
-    return new Promise(resolve => {
-      access(path, err => {
-        if (err) {
-          resolve(false);
-        } else {
-          resolve(true);
-        }
-      });
-    });
+
+    try {
+      const fileHandle = await open(path);
+      await fileHandle.close();
+      return true;
+    } catch (e) {
+      console.log('There was an error opening: ' + e);
+      return false;
+    }
   }
 }
 
