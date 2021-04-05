@@ -1,6 +1,7 @@
 const PORT = 4000;
 const HANDSHAKE_MESSAGE = 'SYNCBOX HELLO';
 const SUCCESS_MESSAGE = 'SYNCBOX OK';
+const EXEC_END_TIMEOUT = 1000;
 
 const messageType = {
   HANDSHAKE: 0,
@@ -13,4 +14,10 @@ const messageType = {
   UNLINK_DIR: 7,
 };
 
-export { PORT, HANDSHAKE_MESSAGE, SUCCESS_MESSAGE, messageType };
+export {
+  PORT,
+  HANDSHAKE_MESSAGE,
+  SUCCESS_MESSAGE,
+  messageType,
+  EXEC_END_TIMEOUT,
+};
