@@ -1,8 +1,7 @@
 import { AsyncQueue, syncDir } from './util.js';
 import Diff from './diff.js';
 import { EventEmitter } from 'events';
-
-const EXEC_END_TIMEOUT = 1000;
+import { EXEC_END_TIMEOUT } from './constants.js';
 
 const transaction = agent =>
   new Promise(resolve => {
