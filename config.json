@@ -1,3 +1,14 @@
 {
-  "remoteAddresses": ["localhost"]
+  "server": {
+    "start": true,
+    "port": 3000,
+    "syncDir": "server"
+  },
+
+  "client": {
+    "start": true,
+    "remoteHost": "localhost",
+    "port": 3000,
+    "syncDir": "client"
+  }
 }
