@@ -1,12 +1,15 @@
 import net from 'net';
-import { PORT } from './constants.js';
 import Agent from './protocol.js';
 import Messenger from './transport.js';
 import Watcher from './watcher.js';
 
-const client = net.createConnection({ port: PORT }, async () => {
+const PORT = parseInt(process.env.CLIENT_PORT);
+const SYNC_DIR = process.env.CLIENT_SYNC_DIR;
+const HOST = process.env.CLIENT_REMOTE_HOST;
+
+const client = net.createConnection({ host: HOST, port: PORT }, async () => {
   const messenger = new Messenger(client);
-  const agent = new Agent(messenger, 'client');
+  const agent = new Agent(messenger, SYNC_DIR);
   await agent.startNegotiation();
-  new Watcher('client', agent);
+  new Watcher(SYNC_DIR, agent);
 });
