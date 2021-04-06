@@ -2,7 +2,7 @@ import { EventEmitter } from 'events';
 import { createWriteStream } from 'fs';
 
 class Messenger extends EventEmitter {
-  constructor(socket) {
+  constructor(socket, socketTimeout) {
     super();
     this.socket = socket;
     this.isTransferringFile = false;
@@ -19,7 +19,10 @@ class Messenger extends EventEmitter {
       await this.closeConnection();
     });
 
-    socket.setTimeout(3000);
+    if (socketTimeout) {
+      socket.setTimeout(socketTimeout);
+    }
+
     socket.on('timeout', async () => {
       console.log('socket timeout');
       await this.closeConnection();
