@@ -70,6 +70,14 @@ class Messenger extends EventEmitter {
     });
   }
 
+  setTimeout(timeout) {
+    this.socket.setTimeout(timeout);
+  }
+
+  clearTimeout() {
+    this.socket.setTimeout(0);
+  }
+
   closeConnection() {
     return new Promise(resolve => {
       this.socket.end(resolve);
