@@ -1,10 +1,6 @@
-import { readFile, mkdir, opendir } from 'fs/promises';
+import {mkdir, opendir } from 'fs/promises';
 import { fork } from 'child_process';
-
-const loadConfig = async path => {
-  const raw = await readFile(path);
-  return JSON.parse(raw.toString());
-};
+import { server, client } from './config.js'
 
 const checkOrCreateDir = async path => {
   try {
@@ -15,9 +11,6 @@ const checkOrCreateDir = async path => {
 };
 
 (async () => {
-  const config = await loadConfig('config.json');
-  const { client, server } = config;
-
   if (server.start) {
     await checkOrCreateDir(server.syncDir);
     fork('./src/server.js', {
