@@ -1,5 +1,6 @@
 const HANDSHAKE_MESSAGE = 'SYNCBOX HELLO';
 const EXEC_END_TIMEOUT = 1000;
+const RESPONSE_TIMEOUT = 5000;
 
 const messageType = {
   HANDSHAKE: 0,
@@ -12,4 +13,4 @@ const messageType = {
   UNLINK_DIR: 7,
 };
 
-export { HANDSHAKE_MESSAGE, messageType, EXEC_END_TIMEOUT };
+export { HANDSHAKE_MESSAGE, messageType, EXEC_END_TIMEOUT, RESPONSE_TIMEOUT };
