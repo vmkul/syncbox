@@ -64,4 +64,9 @@ const syncDir = (dir, agent) =>
       });
   });
 
-export { syncDir, AsyncQueue };
+const exitOnError = errMsg => {
+  process.exitCode = 1;
+  throw new Error(errMsg);
+};
+
+export { syncDir, AsyncQueue, exitOnError };
