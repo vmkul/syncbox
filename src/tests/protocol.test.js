@@ -24,6 +24,8 @@ describe('Tests for protocol', () => {
     messenger.getFile = jest.fn();
     messenger.sendFile = jest.fn();
     messenger.closeConnection = jest.fn();
+    messenger.setTimeout = jest.fn();
+    messenger.clearTimeout = jest.fn();
   });
 
   test('Handshake fail', async () => {
