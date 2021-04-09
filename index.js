@@ -20,16 +20,22 @@ const checkOrCreateDir = async path => {
 
   if (server.start) {
     await checkOrCreateDir(server.syncDir);
-    process.env.SERVER_PORT = server.port;
-    process.env.SERVER_SYNC_DIR = server.syncDir;
-    fork('./src/server.js');
+    fork('./src/server.js', {
+      env: {
+        SERVER_PORT: server.port,
+        SERVER_SYNC_DIR: server.syncDir,
+      },
+    });
   }
 
   if (client.start) {
     await checkOrCreateDir(client.syncDir);
-    process.env.CLIENT_PORT = client.port;
-    process.env.CLIENT_REMOTE_HOST = client.remoteHost;
-    process.env.CLIENT_SYNC_DIR = client.syncDir;
-    fork('./src/client.js');
+    fork('./src/client.js', {
+      env: {
+        CLIENT_PORT: client.port,
+        CLIENT_REMOTE_HOST: client.remoteHost,
+        CLIENT_SYNC_DIR: client.syncDir,
+      },
+    });
   }
 })();
