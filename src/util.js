@@ -42,11 +42,17 @@ class AsyncQueue {
 }
 
 const syncDir = (dir, agent) =>
-  new Promise(resolve => {
+  new Promise((resolve, reject) => {
+    agent.once('end', reject);
+
     const taskQueue = new AsyncQueue(
       agent.startTransaction.bind(agent),
-      agent.endTransaction.bind(agent)
+      async () => {
+        await agent.endTransaction();
+        resolve();
+      }
     );
+
     const watcher = chokidar
       .watch(dir.getFullPath())
       .on('add', path =>
@@ -60,7 +66,6 @@ const syncDir = (dir, agent) =>
       })
       .on('ready', async () => {
         await watcher.close();
-        resolve();
       });
   });
 
