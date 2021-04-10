@@ -2,7 +2,11 @@ import { EventEmitter } from 'events';
 import { mkdir, unlink, rmdir } from 'fs/promises';
 import fs from 'fs';
 import { sep, normalize } from 'path';
-import { HANDSHAKE_MESSAGE, messageType } from './constants.js';
+import {
+  HANDSHAKE_MESSAGE,
+  messageType,
+  RESPONSE_TIMEOUT,
+} from './constants.js';
 import Diff from './diff.js';
 import {
   GetFileMessage,
@@ -51,11 +55,15 @@ class Agent extends EventEmitter {
         console.error(e);
         await this.sendMessage(new FailMessage(e.message));
         await this.messenger.closeConnection();
-        this.emit('end');
       }
     });
 
-    messenger.on('close', () => this.emit('end'));
+    messenger.on('close', () => {
+      if (this.isInTransaction()) {
+        this.emit('transaction_end', new Diff());
+      }
+      this.emit('end');
+    });
   }
 
   async processMessage(message) {
@@ -105,7 +113,11 @@ class Agent extends EventEmitter {
 
   async toggleTransaction() {
     if (this.transactionChecker && !this.activeTransaction) {
-      await this.transactionChecker(this);
+      try {
+        await this.transactionChecker(this);
+      } catch (e) {
+        throw new Error('Could not check transaction!');
+      }
     }
     this.activeTransaction = !this.activeTransaction;
     if (!this.activeTransaction) {
@@ -114,6 +126,7 @@ class Agent extends EventEmitter {
     } else {
       this.transactionDiff = new Diff();
       await this.sendMessage(new SuccessMessage());
+      this.messenger.setTimeout(RESPONSE_TIMEOUT);
     }
   }
 
@@ -232,8 +245,12 @@ class Agent extends EventEmitter {
   }
 
   waitFor(event) {
+    this.messenger.setTimeout(RESPONSE_TIMEOUT);
     return new Promise(resolve => {
-      this.once(event, resolve);
+      this.once(event, () => {
+        this.messenger.clearTimeout();
+        resolve();
+      });
     });
   }
 }
