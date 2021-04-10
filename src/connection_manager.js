@@ -27,14 +27,20 @@ class ConnectionManager extends EventEmitter {
 
   async addConnection(agent) {
     agent.runBeforeTransaction(this.confirmTransaction.bind(this));
-    agent.on('handshake', async () => {
+
+    agent.once('handshake', async () => {
       if (this.syncingClients) {
         await this.syncEnd();
       }
-      await syncDir(this.rootDir, agent);
-      this.connections.add(agent);
+      try {
+        await syncDir(this.rootDir, agent);
+        this.connections.add(agent);
+      } catch (e) {
+        console.error('Could not sync with client');
+      }
     });
-    agent.on('end', () => this.removeConnection(agent));
+
+    agent.once('end', () => this.removeConnection(agent));
   }
 
   async confirmTransaction(agent) {
@@ -50,10 +56,10 @@ class ConnectionManager extends EventEmitter {
     const p = [];
 
     for (const agent of this.connections) {
-      p.push(this.transactionDiff.applyChanges(agent));
+      p.push(this.transactionDiff.patchAgent(agent));
     }
 
-    await Promise.all(p);
+    await Promise.allSettled(p);
 
     this.transactionDiff = new Diff();
     this.syncingClients = false;
