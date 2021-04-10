@@ -75,6 +75,13 @@ class Diff {
     diff.dirsToUnlink.forEach(dir => this.addUnlinkDir(dir));
   }
 
+  async patchAgent(agent) {
+    return new Promise((resolve, reject) => {
+      agent.on('end', reject);
+      this.applyChanges(agent).then(resolve);
+    });
+  }
+
   async applyChanges(agent) {
     await agent.startTransaction();
 
