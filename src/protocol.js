@@ -122,6 +122,7 @@ class Agent extends EventEmitter {
     this.activeTransaction = !this.activeTransaction;
     if (!this.activeTransaction) {
       this.emit('transaction_end', this.transactionDiff);
+      this.messenger.clearTimeout();
       console.log('TRANSACTION END');
     } else {
       this.transactionDiff = new Diff();
