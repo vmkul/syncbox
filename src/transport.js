@@ -13,10 +13,9 @@ class Messenger extends EventEmitter {
       }
     });
 
-    socket.on('error', async e => {
+    socket.on('error', e => {
       console.error('Connection closed on error!');
       console.error(e);
-      await this.closeConnection();
     });
 
     if (socketTimeout) {
@@ -42,16 +41,27 @@ class Messenger extends EventEmitter {
   }
 
   sendFile(file) {
-    const stream = file.getReadStream();
-    stream.pipe(this.socket, { end: false });
+    return new Promise((resolve, reject) => {
+      const stream = file.getReadStream();
+      stream.on('error', reject);
+      stream.on('end', resolve);
+      stream.pipe(this.socket, { end: false });
+    });
   }
 
   getFile(filePath, size) {
-    return new Promise(resolve => {
+    return new Promise((resolve, reject) => {
       this.isTransferringFile = true;
       let bytesWritten = 0;
 
       const output = createWriteStream(filePath);
+
+      output.on('error', e => {
+        this.socket.unpipe();
+        this.socket.resume();
+        reject(e);
+      });
+
       this.socket.pipe(output);
 
       const listener = async chunk => {
@@ -78,9 +88,9 @@ class Messenger extends EventEmitter {
     this.socket.setTimeout(0);
   }
 
-  closeConnection() {
+  closeConnection(msg) {
     return new Promise(resolve => {
-      this.socket.end(resolve);
+      this.socket.end(msg, 'utf8', resolve);
     });
   }
 }
