@@ -14,6 +14,7 @@ class Socket extends EventEmitter {
     this.pipe = jest.fn();
     this.unpipe = jest.fn();
     this.resume = jest.fn();
+    this.on('error', () => this.emit('close'));
   }
 }
 
@@ -39,9 +40,9 @@ describe('Tests for transport', () => {
     expect(lastEmitted).toBe('message');
   });
 
-  test('Socket error event', () => {
+  test('Socket error event', done => {
+    messenger.on('close', done);
     socket.emit('error', 'Error message');
-    expect(socket.end).toBeCalledTimes(1);
   });
 
   test('Socket timeout', () => {
@@ -63,19 +64,24 @@ describe('Tests for transport', () => {
     expect(socket.write.mock.calls[0][0]).toBe('message');
   });
 
-  test('sendFile method', () => {
+  test('sendFile method', async () => {
     const pipe = jest.fn();
+    const stream = new EventEmitter();
+    stream.pipe = pipe;
+
     const file = {
       getReadStream() {
-        return { pipe };
+        return stream;
       },
     };
-    messenger.sendFile(file);
+
+    setImmediate(() => stream.emit('end'));
+    await messenger.sendFile(file);
     expect(pipe.mock.calls[0][0]).toBe(socket);
   });
 
   test('getFile method', async () => {
-    const output = { close: jest.fn() };
+    const output = { close: jest.fn(), on: jest.fn() };
     fs.createWriteStream = jest.fn().mockImplementation(() => output);
     setImmediate(() => {
       for (let i = 0; i < 10; i++) {
