@@ -53,8 +53,9 @@ class Agent extends EventEmitter {
       } catch (e) {
         console.error('Error while processing!');
         console.error(e);
-        await this.sendMessage(new FailMessage(e.message));
-        await this.messenger.closeConnection();
+        await this.messenger.closeConnection(
+          JSON.stringify(new FailMessage(e.message))
+        );
       }
     });
 
@@ -194,7 +195,7 @@ class Agent extends EventEmitter {
     await this.sendMessage(new GetFileMessage(file.getRelativePath(), size));
     if (size !== 0) {
       await this.waitFor('operation_success');
-      this.messenger.sendFile(file);
+      await this.messenger.sendFile(file);
     }
     await this.waitFor('operation_success');
     console.log('Sending successfully completed!');
