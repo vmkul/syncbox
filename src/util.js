@@ -20,7 +20,13 @@ class AsyncQueue {
 
   async startExecution() {
     this.executing = true;
-    if (this.beforeExec) await this.beforeExec();
+    if (this.beforeExec) {
+      try {
+        await this.beforeExec();
+      } catch (e) {
+        console.error(e);
+      }
+    }
 
     while (this.queue.length !== 0) {
       const f = this.queue.shift();
@@ -36,7 +42,13 @@ class AsyncQueue {
       }
     }
 
-    if (this.afterExec) await this.afterExec();
+    if (this.afterExec) {
+      try {
+        await this.afterExec();
+      } catch (e) {
+        console.error(e);
+      }
+    }
     this.executing = false;
   }
 }
@@ -64,6 +76,7 @@ const syncDir = (dir, agent) =>
         }
         await taskQueue.addTask(agent.sendDir.bind(agent, new Directory(path)));
       })
+      .on('error', reject)
       .on('ready', async () => {
         await watcher.close();
       });
