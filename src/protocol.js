@@ -19,6 +19,9 @@ import {
   UnlinkDirMessage,
 } from './message.js';
 
+const ERR_MSG_TRANSACTION_NOT_STARTED =
+  'Operation refused. Transaction not started';
+
 class Agent extends EventEmitter {
   constructor(messenger, rootDirPath) {
     super();
@@ -149,6 +152,10 @@ class Agent extends EventEmitter {
   }
 
   async getFile(file) {
+    if (!this.isInTransaction()) {
+      throw new Error(ERR_MSG_TRANSACTION_NOT_STARTED);
+    }
+
     const { path, size } = file;
     const localPath = this.transformPath(path);
     this.transactionDiff.addFile(localPath);
@@ -172,6 +179,10 @@ class Agent extends EventEmitter {
   }
 
   async createDir(dir) {
+    if (!this.isInTransaction()) {
+      throw new Error(ERR_MSG_TRANSACTION_NOT_STARTED);
+    }
+
     const path = this.transformPath(dir.path);
     this.transactionDiff.addDir(path);
     console.log('Creating dir ' + path);
@@ -209,6 +220,10 @@ class Agent extends EventEmitter {
   }
 
   async unlinkFile(file) {
+    if (!this.isInTransaction()) {
+      throw new Error(ERR_MSG_TRANSACTION_NOT_STARTED);
+    }
+
     const { path } = file;
     const localPath = this.transformPath(path);
     this.transactionDiff.addUnlink(localPath);
@@ -228,6 +243,10 @@ class Agent extends EventEmitter {
   }
 
   async unlinkDir(dir) {
+    if (!this.isInTransaction()) {
+      throw new Error(ERR_MSG_TRANSACTION_NOT_STARTED);
+    }
+
     const localPath = this.transformPath(dir.path);
     this.transactionDiff.addUnlinkDir(localPath);
     await rmdir(localPath, { recursive: true });
