@@ -11,6 +11,11 @@ const transaction = agent =>
     });
   });
 
+const waitFor = (ee, event) =>
+  new Promise(resolve => {
+    ee.once(event, resolve);
+  });
+
 class ConnectionManager extends EventEmitter {
   constructor(rootDir) {
     super();
@@ -27,18 +32,18 @@ class ConnectionManager extends EventEmitter {
 
   async addConnection(agent) {
     agent.runBeforeTransaction(this.confirmTransaction.bind(this));
+    await waitFor(agent, 'handshake');
 
-    agent.once('handshake', async () => {
-      if (this.syncingClients) {
-        await this.syncEnd();
-      }
-      try {
-        await syncDir(this.rootDir, agent);
-        this.connections.add(agent);
-      } catch (e) {
-        console.error('Could not sync with client');
-      }
-    });
+    if (this.syncingClients) {
+      await this.syncEnd();
+    }
+
+    try {
+      await syncDir(this.rootDir, agent);
+      this.connections.add(agent);
+    } catch (e) {
+      console.log(e);
+    }
 
     agent.once('end', () => this.removeConnection(agent));
   }
