@@ -248,7 +248,8 @@ class Agent extends EventEmitter {
 
   waitFor(event) {
     this.messenger.setTimeout(RESPONSE_TIMEOUT);
-    return new Promise(resolve => {
+    return new Promise((resolve, reject) => {
+      this.once('end', reject);
       this.once(event, () => {
         this.messenger.clearTimeout();
         resolve();
