@@ -64,9 +64,7 @@ class Watcher {
     await this.agent.sendUnlinkDir(new Directory(dirPath));
   }
 
-  async errorHandler(e) {
-    throw new Error(e);
-  }
+  async errorHandler() {}
 
   async checkIfAccessible(path) {
     if (!path) return false;
