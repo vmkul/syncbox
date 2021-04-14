@@ -2,6 +2,7 @@ import net from 'net';
 import Agent from './protocol.js';
 import Messenger from './transport.js';
 import Watcher from './watcher.js';
+import { exitOnError } from './util.js';
 
 const PORT = parseInt(process.env.CLIENT_PORT);
 const SYNC_DIR = process.env.CLIENT_SYNC_DIR;
@@ -12,4 +13,5 @@ const client = net.createConnection({ host: HOST, port: PORT }, async () => {
   const agent = new Agent(messenger, SYNC_DIR);
   await agent.startNegotiation();
   new Watcher(SYNC_DIR, agent);
+  agent.on('end', () => exitOnError('Connection closed'));
 });
