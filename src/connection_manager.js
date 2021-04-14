@@ -31,7 +31,7 @@ class ConnectionManager extends EventEmitter {
   }
 
   async addConnection(agent) {
-    agent.runBeforeTransaction(this.confirmTransaction.bind(this));
+    agent.runBeforeTransaction(this.queueTransaction.bind(this));
     await waitFor(agent, 'handshake');
 
     if (this.syncingClients) {
@@ -48,12 +48,24 @@ class ConnectionManager extends EventEmitter {
     agent.once('end', () => this.removeConnection(agent));
   }
 
-  async confirmTransaction(agent) {
+  async queueTransaction(agent) {
     if (this.syncingClients) {
       await this.syncEnd();
     }
+
+    let stopWaiting;
+    const waitInLine = () => new Promise(resolve => (stopWaiting = resolve));
+
+    const launchTransaction = async () => {
+      stopWaiting();
+      await transaction(agent);
+    };
+
+    this.transactionQueue.addTask(launchTransaction).then();
+
+    await waitInLine();
+
     agent.once('transaction_end', diff => this.transactionDiff.mergeWith(diff));
-    this.transactionQueue.addTask(() => transaction(agent)).then();
   }
 
   async syncWithConnected() {
