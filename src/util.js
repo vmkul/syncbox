@@ -1,5 +1,7 @@
 import chokidar from 'chokidar';
 import { Directory, File } from './dirtree.js';
+import { readdir } from 'fs/promises';
+import { EXEC_END_TIMEOUT } from './constants.js';
 
 class AsyncQueue {
   constructor(beforeExec, afterExec, execEndTimeout) {
@@ -53,16 +55,27 @@ class AsyncQueue {
   }
 }
 
+const isDirEmpty = async path => {
+  const contents = await readdir(path);
+  return contents.length === 0;
+};
+
 const syncDir = (dir, agent) =>
   new Promise((resolve, reject) => {
     agent.once('end', reject);
+    isDirEmpty(dir.getFullPath())
+      .then(isEmpty => {
+        if (isEmpty) resolve();
+      })
+      .catch(reject);
 
     const taskQueue = new AsyncQueue(
       agent.startTransaction.bind(agent),
       async () => {
         await agent.endTransaction();
         resolve();
-      }
+      },
+      EXEC_END_TIMEOUT
     );
 
     const watcher = chokidar
