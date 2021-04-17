@@ -110,7 +110,11 @@ class Agent extends EventEmitter {
   async startTransaction() {
     await this.checkTransaction();
     await this.sendMessage(new TransactionMessage());
-    await this.waitFor('operation_success');
+    if (this.starter) {
+      await this.waitFor('operation_success', false);
+    } else {
+      await this.waitFor('operation_success');
+    }
     console.log('TRANSACTION STARTED');
   }
 
