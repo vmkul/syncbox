@@ -1,7 +1,15 @@
 import { AsyncQueue, syncDir } from './util.js';
 import Diff from './diff.js';
 import { EventEmitter } from 'events';
+import { Mutex } from 'async-mutex';
 import { EXEC_END_TIMEOUT } from './constants.js';
+
+const syncStages = {
+  INIT_SYNC: 0,
+  CLIENT_SYNC: 1,
+  GLOBAL_SYNC: 2,
+  NONE: null,
+};
 
 const transaction = agent =>
   new Promise(resolve => {
@@ -23,20 +31,25 @@ class ConnectionManager extends EventEmitter {
     this.connections = new Set();
     this.transactionQueue = new AsyncQueue(
       () => {},
-      () => this.syncWithConnected(),
+      () => {},
       EXEC_END_TIMEOUT
     );
-    this.syncingClients = false;
     this.transactionDiff = new Diff();
+    this.curSyncStage = syncStages.NONE;
+    this.syncStageMutex = new Mutex();
+    this.parallelExecutors = [];
   }
 
   async addConnection(agent) {
+    await this.setSyncStage(
+      syncStages.INIT_SYNC,
+      this._addConnection.bind(this, agent)
+    );
+  }
+
+  async _addConnection(agent) {
     agent.runBeforeTransaction(this.queueTransaction.bind(this));
     await waitFor(agent, 'handshake');
-
-    if (this.syncingClients) {
-      await this.syncEnd();
-    }
 
     try {
       await syncDir(this.rootDir, agent);
@@ -49,27 +62,50 @@ class ConnectionManager extends EventEmitter {
   }
 
   async queueTransaction(agent) {
-    if (this.syncingClients) {
-      await this.syncEnd();
-    }
+    return new Promise(resolve => {
+      this.setSyncStage(
+        syncStages.CLIENT_SYNC,
+        this._queueTransaction.bind(this, agent, resolve)
+      );
+    });
+  }
 
-    let stopWaiting;
-    const waitInLine = () => new Promise(resolve => (stopWaiting = resolve));
+  async _queueTransaction(agent, startTransaction) {
+    return new Promise(resolve => {
+      let stopWaiting;
+      const waitInLine = () => new Promise(resolve => (stopWaiting = resolve));
 
-    const launchTransaction = async () => {
-      stopWaiting();
-      await transaction(agent);
-    };
+      const launchTransaction = () =>
+        new Promise(resolve => {
+          transaction(agent).then(resolve);
+          stopWaiting();
+        });
 
-    this.transactionQueue.addTask(launchTransaction).then();
+      this.transactionQueue.addTask(launchTransaction).then(() => {
+        resolve();
+        this.syncWithConnected();
+      });
 
-    await waitInLine();
+      waitInLine().then(startTransaction);
 
-    agent.once('transaction_end', diff => this.transactionDiff.mergeWith(diff));
+      agent.once('transaction_end', diff =>
+        this.transactionDiff.mergeWith(diff)
+      );
+    });
   }
 
   async syncWithConnected() {
-    this.syncingClients = true;
+    await this.setSyncStage(
+      syncStages.GLOBAL_SYNC,
+      this._syncWithConnected.bind(this)
+    );
+  }
+
+  async _syncWithConnected() {
+    if (this.transactionDiff.isEmpty()) {
+      return;
+    }
+
     const p = [];
 
     for (const agent of this.connections) {
@@ -79,18 +115,28 @@ class ConnectionManager extends EventEmitter {
     await Promise.allSettled(p);
 
     this.transactionDiff = new Diff();
-    this.syncingClients = false;
-    this.emit('global_sync_end');
   }
 
   removeConnection(agent) {
     this.connections.delete(agent);
   }
 
-  syncEnd() {
-    return new Promise(resolve => {
-      this.once('global_sync_end', resolve);
+  async setSyncStage(stage, executor) {
+    if (this.curSyncStage === stage) {
+      return this.parallelExecutors.push(executor());
+    }
+
+    await this.syncStageMutex.runExclusive(async () => {
+      this.curSyncStage = stage;
+      try {
+        await executor();
+      } catch (e) {
+        console.error(e);
+      }
+      await Promise.allSettled(this.parallelExecutors);
+      this.parallelExecutors = [];
     });
+    return true;
   }
 }
 
