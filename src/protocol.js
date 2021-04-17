@@ -8,6 +8,7 @@ import {
   RESPONSE_TIMEOUT,
 } from './constants.js';
 import Diff from './diff.js';
+import EventDispatcher from './event_dispatcher.js';
 import {
   GetFileMessage,
   SuccessMessage,
@@ -31,6 +32,7 @@ class Agent extends EventEmitter {
     this.starter = false;
     this.activeTransaction = false;
     this.transactionDiff = new Diff();
+    this.eventDispatcher = new EventDispatcher();
     this.messageHandlers = new Map();
 
     this.messageHandlers.set(messageType.GET_FILE, this.getFile.bind(this));
@@ -42,7 +44,7 @@ class Agent extends EventEmitter {
       this.toggleTransaction.bind(this)
     );
     this.messageHandlers.set(messageType.SUCCESS, () =>
-      this.emit('operation_success')
+      this.eventDispatcher.registerEvent('operation_success')
     );
     this.messageHandlers.set(messageType.FAIL, () =>
       this.messenger.closeConnection()
@@ -100,6 +102,7 @@ class Agent extends EventEmitter {
         await this.sendMessage(new SuccessMessage());
       }
       this.emit('handshake');
+      this.eventDispatcher.registerEvent('handshake');
       console.log('Handshake success!');
     }
   }
@@ -126,6 +129,7 @@ class Agent extends EventEmitter {
     this.activeTransaction = !this.activeTransaction;
     if (!this.activeTransaction) {
       this.emit('transaction_end', this.transactionDiff);
+      this.eventDispatcher.registerEvent('transaction_end');
       this.messenger.clearTimeout();
       console.log('TRANSACTION END');
     } else {
@@ -269,7 +273,7 @@ class Agent extends EventEmitter {
     this.messenger.setTimeout(RESPONSE_TIMEOUT);
     return new Promise((resolve, reject) => {
       this.once('end', reject);
-      this.once(event, () => {
+      this.eventDispatcher.waitEvent(event).then(() => {
         this.messenger.clearTimeout();
         resolve();
       });
