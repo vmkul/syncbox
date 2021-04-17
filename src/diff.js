@@ -103,6 +103,15 @@ class Diff {
 
     await agent.endTransaction();
   }
+
+  isEmpty() {
+    return (
+      this.filesToAdd.size === 0 &&
+      this.dirsToAdd.size === 0 &&
+      this.filesToUnlink.size === 0 &&
+      this.dirsToUnlink.size === 0
+    );
+  }
 }
 
 export default Diff;
