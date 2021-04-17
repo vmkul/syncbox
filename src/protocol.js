@@ -269,8 +269,8 @@ class Agent extends EventEmitter {
     return this.rootDirPath + sep + path;
   }
 
-  waitFor(event) {
-    this.messenger.setTimeout(RESPONSE_TIMEOUT);
+  async waitFor(event, setResponseTimeout = true) {
+    if (setResponseTimeout) this.messenger.setTimeout(RESPONSE_TIMEOUT);
     return new Promise((resolve, reject) => {
       this.once('end', reject);
       this.eventDispatcher.waitEvent(event).then(() => {
