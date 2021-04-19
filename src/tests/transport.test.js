@@ -2,21 +2,9 @@ import { beforeEach, describe, expect, test } from '@jest/globals';
 import fs from 'fs';
 import { EventEmitter } from 'events';
 import Messenger from '../transport';
+import Socket from '../../__mocks__/socket';
 
 jest.mock('fs');
-
-class Socket extends EventEmitter {
-  constructor() {
-    super();
-    this.setTimeout = jest.fn();
-    this.end = jest.fn();
-    this.write = jest.fn().mockImplementation((data, cb) => cb());
-    this.pipe = jest.fn();
-    this.unpipe = jest.fn();
-    this.resume = jest.fn();
-    this.on('error', () => this.emit('close'));
-  }
-}
 
 describe('Tests for transport', () => {
   let socket;
@@ -94,5 +82,29 @@ describe('Tests for transport', () => {
     expect(socket.unpipe).toBeCalledTimes(1);
     expect(socket.resume).toBeCalledTimes(1);
     expect(output.close).toBeCalledTimes(1);
+  });
+
+  test('getFile output stream emits error', async () => {
+    const output = new EventEmitter();
+    fs.createWriteStream = jest.fn().mockImplementation(() => output);
+    setImmediate(() => output.emit('error', new Error()));
+
+    try {
+      await messenger.getFile('file.txt', 100);
+    } catch (e) {
+      console.error(e);
+    }
+
+    expect(socket.unpipe).toBeCalledTimes(1);
+    expect(socket.resume).toBeCalledTimes(1);
+  });
+
+  test('Timeout methods', () => {
+    messenger.setTimeout(500);
+    messenger.clearTimeout();
+
+    expect(socket.setTimeout).toBeCalledTimes(2);
+    expect(socket.setTimeout).toHaveBeenNthCalledWith(1, 500);
+    expect(socket.setTimeout).toHaveBeenNthCalledWith(2, 0);
   });
 });
