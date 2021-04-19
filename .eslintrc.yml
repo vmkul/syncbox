@@ -1,7 +1,7 @@
 extends:
   - metarhia
-  - plugin:prettier/recommended
   - plugin:sonarjs/recommended
+  - prettier
 plugins:
   - sonarjs
 globals:
