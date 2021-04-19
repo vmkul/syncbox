@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, test } from '@jest/globals';
 import Diff from '../diff';
+import Agent from '../../__mocks__/protocol';
 
 const setsEqual = (a, b) =>
   a.size === b.size && [...a].every(value => b.has(value));
@@ -10,8 +11,10 @@ const dirFile = 'dir/file.txt';
 
 describe('Tests for Diff class', () => {
   let diff;
+  let agent;
 
   beforeEach(() => {
+    agent = new Agent();
     diff = new Diff();
   });
 
@@ -97,13 +100,13 @@ describe('Tests for Diff class', () => {
     diff.addFile('root/dir/one/hello.txt');
     diff.addFile('root/dir/two/three/test.txt');
     diff.addDir('dir');
-    diff.addDir('dir/dir1');
     diff.addFile('dir/hello.txt');
     diff.addFile(dirFile);
 
     const otherDiff = new Diff();
     otherDiff.addFile('photo.png');
     otherDiff.addFile('dir/hello.png');
+    otherDiff.addDir('dir/dir1');
     otherDiff.addUnlinkDir('root/dir');
     otherDiff.addUnlink(dirFile);
 
@@ -118,5 +121,43 @@ describe('Tests for Diff class', () => {
     expect(setsEqual(diff.filesToUnlink, new Set([dirFile]))).toBe(true);
     expect(setsEqual(diff.dirsToAdd, new Set(['dir', 'dir/dir1']))).toBe(true);
     expect(setsEqual(diff.dirsToUnlink, new Set(['root/dir']))).toBe(true);
+  });
+
+  test('patchAgent method throws when applyChanges fails', done => {
+    diff.addFile('file');
+    diff.addUnlink('file1');
+    diff.addDir('dir');
+    diff.addUnlinkDir('dir1');
+
+    diff.patchAgent(agent).catch(() => {
+      expect(agent.startTransaction).toBeCalledTimes(1);
+      expect(agent.sendFile).toBeCalledTimes(1);
+      expect(agent.sendDir).toBeCalledTimes(1);
+      expect(agent.sendUnlink).toBeCalledTimes(1);
+      expect(agent.sendUnlinkDir).toBeCalledTimes(1);
+      done();
+    });
+  });
+
+  test('patchAgent method throws if agent fails', done => {
+    diff.addFile('file');
+    diff.patchAgent(agent).catch(done);
+    agent.emit('end');
+  });
+
+  test('patchAgent success', async () => {
+    diff.addFile('file');
+
+    await diff.patchAgent(agent);
+
+    expect(agent.startTransaction).toBeCalledTimes(1);
+    expect(agent.sendFile).toBeCalledTimes(1);
+    expect(agent.endTransaction).toBeCalledTimes(1);
+  });
+
+  test('isEmpty method', () => {
+    expect(diff.isEmpty()).toBe(true);
+    diff.addFile('file');
+    expect(diff.isEmpty()).toBe(false);
   });
 });
