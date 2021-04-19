@@ -14,35 +14,37 @@ class Watcher {
       EXEC_END_TIMEOUT
     );
 
-    const fsWatcher = chokidar.watch(this.dirPath).on('ready', () => {
-      const onAddOrChange = async path => {
-        if (!this.agent.isInTransaction()) {
-          await this.taskQueue.addTask(this.changeHandler.bind(this, path));
-        }
-      };
+    const fsWatcher = chokidar
+      .watch(this.dirPath)
+      .on('ready', () => {
+        const onAddOrChange = async path => {
+          if (!this.agent.isInTransaction()) {
+            await this.taskQueue.addTask(this.changeHandler.bind(this, path));
+          }
+        };
 
-      fsWatcher
-        .on('add', onAddOrChange)
-        .on('change', onAddOrChange)
-        .on('unlink', async path => {
-          if (!this.agent.isInTransaction()) {
-            await this.taskQueue.addTask(this.unlinkHandler.bind(this, path));
-          }
-        })
-        .on('addDir', async path => {
-          if (!this.agent.isInTransaction()) {
-            await this.taskQueue.addTask(this.addDirHandler.bind(this, path));
-          }
-        })
-        .on('unlinkDir', async path => {
-          if (!this.agent.isInTransaction()) {
-            await this.taskQueue.addTask(
-              this.unlinkDirHandler.bind(this, path)
-            );
-          }
-        })
-        .on('error', e => this.errorHandler(e));
-    });
+        fsWatcher
+          .on('add', onAddOrChange)
+          .on('change', onAddOrChange)
+          .on('unlink', async path => {
+            if (!this.agent.isInTransaction()) {
+              await this.taskQueue.addTask(this.unlinkHandler.bind(this, path));
+            }
+          })
+          .on('addDir', async path => {
+            if (!this.agent.isInTransaction()) {
+              await this.taskQueue.addTask(this.addDirHandler.bind(this, path));
+            }
+          })
+          .on('unlinkDir', async path => {
+            if (!this.agent.isInTransaction()) {
+              await this.taskQueue.addTask(
+                this.unlinkDirHandler.bind(this, path)
+              );
+            }
+          });
+      })
+      .on('error', e => this.errorHandler(e));
   }
 
   async changeHandler(filePath) {
