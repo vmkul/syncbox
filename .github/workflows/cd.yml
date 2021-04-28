@@ -13,9 +13,6 @@ jobs:
         node-version: [15.x]
 
     steps:
-      - env:
-          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
-          SERVER_ADDRESS: ${{ secrets.SERVER_ADDRESS }}
       - uses: actions/checkout@v2
       - name: Use Node.js ${{ matrix.node-version }}
         uses: actions/setup-node@v1
@@ -24,6 +21,13 @@ jobs:
       - run: npm ci
       - run: npm run lint-test --if-present
       - run: npm run test --if-present
-      - run: echo "$SSH_PRIVATE_KEY" > key
-      - run: chmod 600 key
-      - run: ssh -i key "$SERVER_ADDRESS" "./deploy.sh"
+
+      - name: Save ssh private key to file
+        run: echo "$SSH_PRIVATE_KEY" > key && chmod 600 key
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+
+      - name: Run deploy script on deployment server
+        run: ssh -i key "$SERVER_ADDRESS" "./deploy.sh"
+        env:
+          SERVER_ADDRESS: ${{ secrets.SERVER_ADDRESS }}
