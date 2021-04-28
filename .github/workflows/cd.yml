@@ -1,0 +1,29 @@
+name: CD
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        node-version: [15.x]
+
+    steps:
+      - env:
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+          SERVER_ADDRESS: ${{ secrets.SERVER_ADDRESS }}
+      - uses: actions/checkout@v2
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v1
+        with:
+          node-version: ${{ matrix.node-version }}
+      - run: npm ci
+      - run: npm run lint-test --if-present
+      - run: npm run test --if-present
+      - run: echo "$SSH_PRIVATE_KEY" > key
+      - run: chmod 600 key
+      - run: ssh -i key "$SERVER_ADDRESS" "./deploy.sh"
