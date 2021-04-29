@@ -22,10 +22,10 @@ export default class EventDispatcher {
   }
 
   _incrementEvent(event) {
-    if (!this.eventCount.has(event)) {
+    const total = this.eventCount.get(event);
+    if (!total) {
       this.eventCount.set(event, 1);
     } else {
-      const total = this.eventCount.get(event);
       this.eventCount.set(event, total + 1);
     }
   }
