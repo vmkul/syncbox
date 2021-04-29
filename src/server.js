@@ -4,8 +4,8 @@ import Messenger from './transport.js';
 import ConnectionManager from './connection_manager.js';
 import { Directory } from './dirtree.js';
 
-const PORT = parseInt(process.env.SERVER_PORT);
-const SYNC_DIR = process.env.SERVER_SYNC_DIR;
+const PORT = parseInt(process.env.SERVER_PORT) || 3000;
+const SYNC_DIR = process.env.SERVER_SYNC_DIR || 'server';
 const conManager = new ConnectionManager(new Directory(SYNC_DIR));
 
 net
