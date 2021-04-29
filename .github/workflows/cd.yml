@@ -41,6 +41,6 @@ jobs:
           SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
 
       - name: Run deploy script on deployment server
-        run: ssh -i key "$SERVER_ADDRESS" "cd syncbox && ./deploy.sh"
+        run: ssh -o "StrictHostKeyChecking=no" -i key "$SERVER_ADDRESS" "cd syncbox && ./deploy.sh"
         env:
           SERVER_ADDRESS: ${{ secrets.SERVER_ADDRESS }}
