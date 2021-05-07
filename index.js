@@ -2,6 +2,10 @@ import { mkdir, opendir } from 'fs/promises';
 import { fork } from 'child_process';
 import { server, client } from './config.js';
 import { exitOnError } from './src/util.js';
+import EventDispatcher from './src/event_dispatcher.js';
+import { MSG_SERVER_STARTED } from './src/constants.js';
+
+const ed = new EventDispatcher();
 
 const checkOrCreateDir = async path => {
   try {
@@ -27,6 +31,7 @@ const ac = new AbortController();
       },
       signal: ac.signal,
     })
+      .on('message', () => ed.registerEvent(MSG_SERVER_STARTED))
       .on('error', () => exitOnError('Could not spawn server process!'))
       .on('exit', () => exitOnError('Server exited on error!'));
   }
@@ -37,6 +42,7 @@ const ac = new AbortController();
     } catch (e) {
       exitOnError(`Could not create dir ${client.syncDir}!`);
     }
+    await ed.waitEvent(MSG_SERVER_STARTED);
     fork('./src/client.js', {
       env: {
         CLIENT_PORT: client.port,
