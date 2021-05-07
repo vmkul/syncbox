@@ -3,6 +3,7 @@ import Agent from './protocol.js';
 import Messenger from './transport.js';
 import ConnectionManager from './connection_manager.js';
 import { Directory } from './dirtree.js';
+import { MSG_SERVER_STARTED } from './constants.js';
 
 const PORT = parseInt(process.env.SERVER_PORT) || 3000;
 const SYNC_DIR = process.env.SERVER_SYNC_DIR || 'server';
@@ -14,4 +15,4 @@ net
     const agent = new Agent(messenger, SYNC_DIR);
     await conManager.addConnection(agent);
   })
-  .listen(PORT);
+  .listen(PORT, () => process.send(MSG_SERVER_STARTED));
