@@ -3,33 +3,35 @@
 rm -rf server client
 npm start &
 sleep 2
+cd client || exit 1
 
 for FILE_NAME in file1 file2 file3
 do
-  dd if=/dev/urandom of=./client/$FILE_NAME bs=1024 count=1024 > /dev/null 2>&1
+  dd if=/dev/urandom of=./$FILE_NAME bs=1024 count=1024 > /dev/null 2>&1
 done
 
-mkdir ./client/dir1
+mkdir ./dir1
 sleep 0.5
 
 for FILE_NAME in file1 file2 file3
 do
-  dd if=/dev/urandom of=./client/dir1/$FILE_NAME bs=1024 count=1024 > /dev/null 2>&1
+  dd if=/dev/urandom of=./dir1/$FILE_NAME bs=1024 count=1024 > /dev/null 2>&1
 done
 
-mkdir ./client/dir2
+mkdir ./dir2
 sleep 0.5
 
 for FILE_NAME in file1 file2 file3
 do
-  dd if=/dev/urandom of=./client/dir2/$FILE_NAME bs=1024 count=1024 > /dev/null 2>&1
+  dd if=/dev/urandom of=./dir2/$FILE_NAME bs=1024 count=1024 > /dev/null 2>&1
 done
 
 sleep 0.5
-rm -rf ./client/dir2
-rm ./client/file1
+rm -rf ./dir2
+rm ./file1
 
 sleep 4
+cd ..
 
 if diff -qr client server; then
   echo "Directories equal. Test passed."
