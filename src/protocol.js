@@ -1,5 +1,5 @@
 import { EventEmitter } from 'events';
-import { mkdir, unlink, rmdir } from 'fs/promises';
+import { mkdir, unlink, rm } from 'fs/promises';
 import fs from 'fs';
 import { sep, normalize } from 'path';
 import {
@@ -257,7 +257,7 @@ class Agent extends EventEmitter {
 
     const localPath = this.transformPath(dir.path);
     this.transactionDiff.addUnlinkDir(localPath);
-    await rmdir(localPath, { recursive: true });
+    await rm(localPath, { force: true, recursive: true });
     await this.sendMessage(new SuccessMessage());
   }
 
