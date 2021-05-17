@@ -39,7 +39,6 @@ if diff -qr client server; then
 else
   echo "Test failed."
   EXIT_CODE=1
-  exit 1
 fi
 
 pkill node
