@@ -11,6 +11,16 @@ const syncStages = {
   NONE: null,
 };
 
+const asyncPromiseAll = async p => {
+  while (p.length > 0) {
+    try {
+      await p.pop();
+    } catch (e) {
+      console.error(e);
+    }
+  }
+};
+
 const transaction = agent =>
   new Promise(resolve => {
     agent.once('transaction_end', diff => {
@@ -122,21 +132,21 @@ class ConnectionManager extends EventEmitter {
   }
 
   async setSyncStage(stage, executor) {
-    if (this.curSyncStage === stage) {
-      return this.parallelExecutors.push(executor());
+    if (this.curSyncStage === stage && stage !== syncStages.GLOBAL_SYNC) {
+      this.parallelExecutors.push(executor());
+    } else {
+      await this.syncStageMutex.runExclusive(async () => {
+        this.curSyncStage = stage;
+        try {
+          await executor();
+        } catch (e) {
+          console.error(e);
+        }
+        await asyncPromiseAll(this.parallelExecutors);
+        this.curSyncStage = syncStages.NONE;
+        this.parallelExecutors = [];
+      });
     }
-
-    await this.syncStageMutex.runExclusive(async () => {
-      this.curSyncStage = stage;
-      try {
-        await executor();
-      } catch (e) {
-        console.error(e);
-      }
-      await Promise.allSettled(this.parallelExecutors);
-      this.parallelExecutors = [];
-    });
-    return true;
   }
 }
 
