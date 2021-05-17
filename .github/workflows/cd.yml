@@ -10,7 +10,7 @@ jobs:
 
     strategy:
       matrix:
-        node-version: [15.x]
+        node-version: [15.x, 16.x]
 
     steps:
       - uses: actions/checkout@v2
@@ -32,8 +32,9 @@ jobs:
             ${{ runner.os }}-
 
       - run: npm ci
-      - run: npm run lint-test --if-present
-      - run: npm run test --if-present
+      - run: npm run lint-test
+      - run: npm run test
+      - run: ./integrative_test.sh
 
       - name: Save ssh private key to file
         run: echo "$SSH_PRIVATE_KEY" > key && chmod 600 key
