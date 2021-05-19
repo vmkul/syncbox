@@ -42,7 +42,7 @@ const ac = new AbortController();
     } catch (e) {
       exitOnError(`Could not create dir ${client.syncDir}!`);
     }
-    await ed.waitEvent(MSG_SERVER_STARTED);
+    if (server.start) await ed.waitEvent(MSG_SERVER_STARTED);
     fork('./src/client.js', {
       env: {
         CLIENT_PORT: client.port,
