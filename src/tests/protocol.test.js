@@ -4,10 +4,7 @@ import { sep } from 'path';
 import Messenger from '../../__mocks__/transport';
 
 jest.mock('fs/promises');
-import { mkdir } from 'fs/promises';
-
-jest.mock('fs');
-import fs from 'fs';
+import { mkdir, open } from 'fs/promises';
 import {
   FailMessage,
   GetFileMessage,
@@ -67,6 +64,9 @@ describe('Tests for protocol', () => {
   });
 
   test('FILE request', async () => {
+    const close = jest.fn();
+    open.mockImplementation(() => ({ close }));
+
     await agent.processMessage(new TransactionMessage());
     await agent.processMessage(new GetFileMessage('filename', 1000));
 
@@ -77,8 +77,8 @@ describe('Tests for protocol', () => {
 
     await agent.processMessage(new GetFileMessage('empty', 0));
 
-    expect(fs.closeSync).toHaveBeenCalled();
-    expect(fs.openSync).toHaveBeenCalled();
+    expect(open).toHaveBeenCalled();
+    expect(close).toHaveBeenCalled();
   });
 
   test('sendFile method', async () => {
