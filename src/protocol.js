@@ -1,6 +1,5 @@
 import { EventEmitter } from 'events';
-import { mkdir, unlink, rm } from 'fs/promises';
-import fs from 'fs';
+import { mkdir, unlink, rm, open } from 'fs/promises';
 import { sep, normalize } from 'path';
 import {
   HANDSHAKE_MESSAGE,
@@ -169,7 +168,8 @@ class Agent extends EventEmitter {
     this.transactionDiff.addFile(localPath);
 
     if (size === 0) {
-      fs.closeSync(fs.openSync(localPath, 'w'));
+      const file = await open(localPath, 'w');
+      await file.close();
     } else {
       await this.sendMessage(new SuccessMessage());
       await this.messenger.getFile(localPath, size);
