@@ -44,7 +44,7 @@ class ConnectionManager extends EventEmitter {
       () => {},
       EXEC_END_TIMEOUT
     );
-    this.transactionDiff = new Diff();
+    this.agentDiff = new Map();
     this.curSyncStage = syncStages.NONE;
     this.syncStageMutex = new Mutex();
     this.parallelExecutors = [];
@@ -98,9 +98,7 @@ class ConnectionManager extends EventEmitter {
 
       waitInLine().then(startTransaction);
 
-      agent.once('transaction_end', diff =>
-        this.transactionDiff.mergeWith(diff)
-      );
+      agent.once('transaction_end', diff => this.agentDiff.set(agent, diff));
     });
   }
 
@@ -112,19 +110,27 @@ class ConnectionManager extends EventEmitter {
   }
 
   async _syncWithConnected() {
-    if (this.transactionDiff.isEmpty()) {
+    if (this.agentDiff.size === 0) {
       return;
     }
 
     const p = [];
 
     for (const agent of this.connections) {
-      p.push(this.transactionDiff.patchAgent(agent));
+      const agentPatch = new Diff();
+
+      for (const [otherAgent, diff] of this.agentDiff.entries()) {
+        if (otherAgent === agent) continue;
+        agentPatch.mergeWith(diff);
+      }
+
+      if (!agentPatch.isEmpty()) {
+        p.push(agentPatch.patchAgent(agent));
+      }
     }
 
     await Promise.allSettled(p);
-
-    this.transactionDiff = new Diff();
+    this.agentDiff.clear();
   }
 
   removeConnection(agent) {
