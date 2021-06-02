@@ -72,7 +72,7 @@ class Watcher {
     if (!path) return false;
 
     try {
-      const fileHandle = await open(path);
+      const fileHandle = await open(path, 'r');
       await fileHandle.close();
       return true;
     } catch (e) {
