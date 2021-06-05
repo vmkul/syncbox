@@ -2,7 +2,8 @@ import { dirname } from 'path';
 import { File, Directory } from './dirtree.js';
 
 class Diff {
-  constructor() {
+  constructor(parentDirPath = '.') {
+    this.parentDirPath = parentDirPath;
     this.filesToAdd = new Set();
     this.dirsToAdd = new Set();
     this.filesToUnlink = new Set();
@@ -38,11 +39,10 @@ class Diff {
   }
 
   ensureDirNotDeleted(path) {
-    let parentDir = path;
-    while ((parentDir = dirname(parentDir)) !== '.') {
-      this.dirsToUnlink.delete(parentDir);
+    while (path !== this.parentDirPath) {
+      this.dirsToUnlink.delete(path);
+      path = dirname(path);
     }
-    this.dirsToUnlink.delete(path);
   }
 
   ensureChildNodeNotAdded(path) {
@@ -59,11 +59,12 @@ class Diff {
   }
 
   checkDirIsRemoved(path) {
-    do {
+    while (path !== this.parentDirPath) {
       if (this.dirsToUnlink.has(path)) {
         return true;
       }
-    } while ((path = dirname(path)) !== '.');
+      path = dirname(path);
+    }
 
     return false;
   }
