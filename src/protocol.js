@@ -30,7 +30,7 @@ class Agent extends EventEmitter {
     this.handShake = false;
     this.starter = false;
     this.activeTransaction = false;
-    this.transactionDiff = new Diff();
+    this.transactionDiff = new Diff(rootDirPath);
     this.eventDispatcher = new EventDispatcher();
     this.messageHandlers = new Map();
 
@@ -65,7 +65,7 @@ class Agent extends EventEmitter {
 
     messenger.on('close', () => {
       if (this.isInTransaction()) {
-        this.emit('transaction_end', new Diff());
+        this.emit('transaction_end', new Diff(this.rootDirPath));
       }
       this.emit('end');
     });
@@ -136,7 +136,7 @@ class Agent extends EventEmitter {
       this.messenger.clearTimeout();
       console.log('TRANSACTION END');
     } else {
-      this.transactionDiff = new Diff();
+      this.transactionDiff = new Diff(this.rootDirPath);
       await this.sendMessage(new SuccessMessage());
       this.messenger.setTimeout(RESPONSE_TIMEOUT);
     }
